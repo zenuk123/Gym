@@ -194,3 +194,11 @@ export async function downloadPhoto(photoId: string): Promise<Blob | null> {
 }
 
 export const canDownloadPhotos = () => cloudConfigured && state.user !== null;
+
+/** The signed-in user's access token (for calling our own Edge Functions), or null. */
+export async function accessToken(): Promise<string | null> {
+  if (!cloudConfigured || !state.user) return null;
+  const client = await getClient();
+  const { data } = await client.auth.getSession();
+  return data.session?.access_token ?? null;
+}

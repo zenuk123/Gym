@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { Icon } from '../../components/Icon';
 import { SubHeader } from '../../components/PageHeader';
 import { useToast } from '../../components/Toast';
-import { createBackup, foodCSV, resetDevice, restoreBackup, saveFile, stampedName, waterCSV, weightsCSV, workoutsCSV } from '../../lib/backup';
+import { createBackup, foodCSV, resetDevice, restoreBackup, saveFile, sleepCSV, stampedName, waterCSV, weightsCSV, workoutsCSV } from '../../lib/backup';
 import { useSyncState } from '../../sync/manager';
 import { exportablePhotos } from '../progress/photos/photoStore';
 
@@ -79,6 +79,7 @@ export function DataSettings() {
           { title: 'Body weight', name: 'weights', get: weightsCSV },
           { title: 'Food log', name: 'food-log', get: foodCSV },
           { title: 'Water (daily totals)', name: 'water', get: waterCSV },
+          { title: 'Sleep', name: 'sleep', get: sleepCSV },
         ].map((x) => (
           <button
             key={x.name}

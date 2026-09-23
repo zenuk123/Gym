@@ -8,6 +8,31 @@ No Mac, Xcode or App Store needed: build from Windows, deploy from GitHub, test 
 
 ## Status
 
+### Phase 6 — AI coach, weekly review, sleep ✅
+- **AI coach** (*More → AI coach*): chat with Claude about **your own data**. It uses read-only tools to look up
+  your profile and targets, weight trend, training summary, exercise history, programme, nutrition, food log, sleep,
+  goals and measurements, weekly review, foods, saved meals and meal plan. It never changes anything.
+  Every point in a reply is labelled **Fact**, **Calculation**, **Suggestion** or **General**. Replies stream in,
+  the conversation is kept on the device, and offline use is handled cleanly (everything else keeps working).
+- **AI meal ideas** (Nutrition → *Ideas for the rest of today*, or Plan → *Meal ideas*): ideas for a meal, for the
+  rest of today (based on what's left of your calories and protein), or for batch cooking. They are built from foods
+  you actually use, and nutrition comes from your food database wherever an ingredient matches. Nothing is saved until
+  you tap **Save meal** or **Plan**, which also feeds the shopping list.
+- **Connecting Claude** (*More → AI settings*): either paste your own Anthropic API key (stored only on this phone,
+  never synced or backed up), or use the optional server proxy (see §4) so no key lives on the phone.
+  Models: Claude Opus 5 (default) or Claude Sonnet 5.
+- **Weekly review** (*More → Weekly review*, and a card on Today on Sundays and Mondays):
+  - The week's numbers: workouts vs target, sets and volume vs last week, PBs, average calories and protein,
+    average weight vs last week, water and sleep.
+  - A **habit score** that shows its parts.
+  - **What went well** (facts) and up to three **focus points** (suggestions — they never change your targets).
+  - Share it, or tap *Discuss with coach*.
+- **Sleep** (*Progress → Sleep*, and a Sleep card on Today):
+  - Log bedtime, wake time and quality in two taps.
+  - A chart of hours per night against an 8 h line, plus average, quality, short nights and bedtime consistency.
+  - **Sleep & training**: once there's enough data, it compares your lifting after 7 h+ nights with shorter ones.
+  - Sleep is included in the CSV export and in sync.
+
 ### Phase 5 — Meal prep ✅
 - **Weekly meal planner:** Monday → Sunday × breakfast / lunch / dinner / snack. Each day shows its calories and protein
   against target, and the week shows averages. Plan any food or saved meal. You can copy an item to other days,
@@ -18,7 +43,7 @@ No Mac, Xcode or App Store needed: build from Windows, deploy from GitHub, test 
   (e.g. "600 g (≈ 4 × 1 breast)") and groups items by aisle: meat & fish, dairy & eggs, fruit, vegetables,
   carbohydrates, snacks, other. There are big checkboxes, your own extra items, rebuilding keeps your ticks,
   and you can **share** the list as text.
-- **AI meal ideas** come from the AI coach (Phase 6).
+- **AI meal ideas** arrived in Phase 6 (see above).
 
 ### Phase 4 — Nutrition ✅
 - **Food database:** about 100 common foods built in (per-100 g values, works offline), plus **your own foods**
@@ -84,7 +109,7 @@ No Mac, Xcode or App Store needed: build from Windows, deploy from GitHub, test 
 - Data ownership: JSON backup/restore, CSV export, erase
 - Dark mode (default), light mode, kg/lb, cm/ft-in
 
-Next: **Phase 6 — AI coach** (questions about your data, AI meal generator, weekly review).
+Next: **Phase 7 — integrations** (see the roadmap).
 
 ---
 
@@ -140,7 +165,7 @@ Without this the app runs in **on-device mode** — everything works, data just 
 
 1. Create a free project at <https://supabase.com>.
 2. **SQL Editor** → paste and run each file in [`supabase/migrations/`](supabase/migrations/) in order
-   (`0001_init.sql` … `0005_meal_prep.sql`). When a new phase adds a migration, run just the new file.
+   (`0001_init.sql` … `0006_sleep.sql`). When a new phase adds a migration, run just the new file.
    `0003` also creates the private `progress-photos` storage bucket (owner-only access).
 3. **Project Settings → API**: copy the *Project URL* and the *anon public* key.
 4. Add them as environment variables where you build:
@@ -151,6 +176,25 @@ Without this the app runs in **on-device mode** — everything works, data just 
 
 Then *More → Account & sync → Create account*. Anything already on the phone is uploaded on first sign-in.
 The anon key is safe to ship in the app: Row Level Security restricts every row to its owner.
+
+## 4. Optional: AI coach without a key on the phone (Supabase Edge Function)
+
+The simplest setup is *More → AI settings → My API key*: the key is stored only on that phone and requests go
+straight to Anthropic. Set a monthly spend limit in the Anthropic Console.
+
+If you'd rather keep the key on a server, deploy the included proxy
+([`supabase/functions/claude`](supabase/functions/claude/index.ts)). It only answers signed-in users whose email
+is on your allow-list, and only forwards `/v1/messages` for the two supported models:
+
+```bash
+npm i -g supabase            # or use npx supabase
+supabase login
+supabase link --project-ref <your-project-ref>
+supabase secrets set ANTHROPIC_API_KEY=sk-ant-... ALLOWED_EMAILS=you@example.com
+supabase functions deploy claude
+```
+
+Then pick *More → AI settings → My server* in the app (it appears once cloud sync is configured and you're signed in).
 
 ---
 
@@ -184,10 +228,12 @@ src/
   pwa/         service-worker update prompt, install prompt, platform helpers
   components/  shared UI: BottomNav, Sheet, NumberField, LineChart, Toast, …
   features/    onboarding/, today/, workout/ (hub, routines, library, history, gym/ = Gym Mode), nutrition/,
-               progress/ (overview, body, goals, analytics, photos/), more/
+               progress/ (overview, body, goals, analytics, photos/, sleep/), review/ (weekly review),
+               coach/ (AI coach chat, read-only data tools, meal ideas, AI settings), more/
   components/charts/  BarChart, MeterList, StackBar, ChartTable (+ components/LineChart)
   styles/      tokens.css (colours, dark/light), base, layout, components
 supabase/migrations/   cloud schema
+supabase/functions/claude/   optional Claude proxy (keeps the API key server-side)
 scripts/generate-icons.mjs   regenerates icons + iOS splash screens from public/icons/icon.svg
 ```
 
@@ -213,7 +259,7 @@ To regenerate icons after editing `public/icons/icon.svg`:
 1. **Foundation** — PWA, profile, targets, Today, offline + sync ✅
 2. **Gym** — exercise library, routines, Gym Mode, set logging (RPE, warm-up/drop/super sets), rest timer, PBs, progressive overload ✅
 3. **Progress** — measurements, goals, progress photos, analytics ✅
-4. **Nutrition** — food database, custom foods, saved meals ✅, meal history
+4. **Nutrition** — food database, custom foods, saved meals, meal history ✅
 5. **Meal prep** — weekly planner, shopping lists, AI meal generator ✅
-6. **AI coach** — questions over your own data, weekly review
+6. **AI coach** — questions over your own data, AI meal generator, weekly review, sleep ✅
 7. **Integrations** — Apple Health, barcode scanner, wearables, native iOS wrapper (only once the PWA is stable)

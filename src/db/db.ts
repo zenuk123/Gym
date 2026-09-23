@@ -12,6 +12,7 @@ import type {
   ProgressPhoto,
   SavedMeal,
   ShoppingItem,
+  SleepLog,
   Routine,
   WaterLog,
   WeightEntry,
@@ -41,6 +42,7 @@ export class FitnessDB extends Dexie {
   meals!: EntityTable<SavedMeal, 'id'>;
   planItems!: EntityTable<PlanItem, 'id'>;
   shopping!: EntityTable<ShoppingItem, 'id'>;
+  sleep!: EntityTable<SleepLog, 'id'>;
   outbox!: EntityTable<OutboxEntry, 'key'>;
   meta!: EntityTable<MetaEntry, 'key'>;
 
@@ -76,6 +78,10 @@ export class FitnessDB extends Dexie {
     this.version(5).stores({
       planItems: 'id, date, updatedAt',
       shopping: 'id, weekStart, updatedAt',
+    });
+    // Phase 6: sleep
+    this.version(6).stores({
+      sleep: 'id, date, updatedAt',
     });
   }
 }

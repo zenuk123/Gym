@@ -16,6 +16,7 @@ import { addDays, formatDateShort, parseISODate, startOfWeek } from '../../lib/d
 import { formatInt } from '../../lib/format';
 import { round } from '../../lib/units';
 import { useToday } from '../../lib/useToday';
+import { MealIdeasSheet } from '../coach/MealIdeasSheet';
 import { AddFoodSheet } from './AddFoodSheet';
 import { NutritionTabs } from './NutritionTabs';
 import { MEALS } from './QuickAddSheet';
@@ -33,6 +34,7 @@ export function PlanPage({ profile }: { profile: Profile }) {
   const [selected, setSelected] = useState<PlanItem | null>(null);
   const [prepping, setPrepping] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [ideas, setIdeas] = useState(false);
 
   const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
   const byDay = useMemo(() => {
@@ -160,9 +162,15 @@ export function PlanPage({ profile }: { profile: Profile }) {
           </button>
         )}
       </div>
-      <Link to="/more/coach?prompt=plan" className="btn btn-ghost btn-block">
-        <Icon name="sparkles" /> Ask the AI coach for meal ideas
-      </Link>
+      <div className="btn-row">
+        <button className="btn" onClick={() => setIdeas(true)}>
+          <Icon name="sparkles" /> Meal ideas
+        </button>
+        <Link to="/more/coach?prompt=plan" className="btn btn-ghost">
+          <Icon name="brain" /> Review with coach
+        </Link>
+      </div>
+      {ideas && <MealIdeasSheet profile={profile} date={weekStart <= today && today <= weekEnd ? today : weekStart} onClose={() => setIdeas(false)} />}
 
       {adding && (
         <AddFoodSheet

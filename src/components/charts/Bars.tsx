@@ -3,12 +3,16 @@ export function MeterList({
   rows,
   tone = 'var(--accent)',
   formatValue = (v) => String(Math.round(v)),
+  max: fixedMax,
 }: {
-  rows: { key: string; label: string; value: number }[];
+  /** `text` overrides the formatted value for that row. */
+  rows: { key: string; label: string; value: number; text?: string }[];
   tone?: string;
   formatValue?: (v: number) => string;
+  /** Scale maximum (defaults to the largest value). */
+  max?: number;
 }) {
-  const max = Math.max(1, ...rows.map((r) => r.value));
+  const max = fixedMax ?? Math.max(1, ...rows.map((r) => r.value));
   return (
     <div className="meter-list" role="table">
       {rows.map((r) => (
@@ -20,7 +24,7 @@ export function MeterList({
             <span style={{ width: `${(r.value / max) * 100}%`, background: tone }} />
           </span>
           <span className="meter-value" role="cell">
-            {formatValue(r.value)}
+            {r.text ?? formatValue(r.value)}
           </span>
         </div>
       ))}

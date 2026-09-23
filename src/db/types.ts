@@ -320,6 +320,19 @@ export interface ShoppingItem extends SyncFields {
   source: 'plan' | 'manual';
 }
 
+// ── Sleep (Phase 6) ──────────────────────────────────────────────────────
+
+/** One night, filed under the date you woke up. Times are local "HH:MM". */
+export interface SleepLog extends SyncFields {
+  date: ISODate;
+  bedTime: string;
+  wakeTime: string;
+  durationMin: number;
+  /** 1 (awful) – 5 (great) */
+  quality: number;
+  note: string | null;
+}
+
 /** Local table name → record type, for every table that syncs. */
 export interface SyncTableMap {
   profile: Profile;
@@ -336,6 +349,7 @@ export interface SyncTableMap {
   meals: SavedMeal;
   planItems: PlanItem;
   shopping: ShoppingItem;
+  sleep: SleepLog;
 }
 export type SyncTable = keyof SyncTableMap;
 
@@ -355,6 +369,7 @@ export const REMOTE_TABLES: Record<SyncTable, string> = {
   meals: 'saved_meals',
   planItems: 'plan_items',
   shopping: 'shopping_items',
+  sleep: 'sleep_logs',
 };
 
 export const SYNC_TABLES = Object.keys(REMOTE_TABLES) as SyncTable[];

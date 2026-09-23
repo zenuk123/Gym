@@ -14,6 +14,7 @@ import { newId } from '../../lib/id';
 import { macroTargets, sumIntake } from '../../lib/intake';
 import { round } from '../../lib/units';
 import { useToday } from '../../lib/useToday';
+import { MealIdeasSheet } from '../coach/MealIdeasSheet';
 import { AddFoodSheet } from './AddFoodSheet';
 import { EditLogSheet } from './EditLogSheet';
 import { NutritionTabs } from './NutritionTabs';
@@ -28,6 +29,7 @@ export function NutritionPage({ profile }: { profile: Profile }) {
   const [date, setDate] = useState(today);
   const [adding, setAdding] = useState<{ slot?: MealSlot } | null>(null);
   const [editing, setEditing] = useState<FoodLog | null>(null);
+  const [ideas, setIdeas] = useState(false);
   const logs = useFoodLogs(date);
   const intake = useMemo(() => sumIntake(logs ?? []), [logs]);
   const macros = macroTargets(profile);
@@ -118,6 +120,11 @@ export function NutritionPage({ profile }: { profile: Profile }) {
           {intake.proteinG < profile.proteinTarget ? `${formatInt(profile.proteinTarget - intake.proteinG)} g protein to go` : 'protein target hit ✓'}
           {intake.fibreG > 0 && ` · ${round(intake.fibreG, 0)} g fibre`}
         </p>
+        {date === today && (
+          <button className="chip" style={{ alignSelf: 'flex-start' }} onClick={() => setIdeas(true)}>
+            <Icon name="sparkles" width={16} height={16} /> Ideas for the rest of today
+          </button>
+        )}
       </section>
 
       {MEALS.map((m) => {
@@ -172,6 +179,7 @@ export function NutritionPage({ profile }: { profile: Profile }) {
 
       {adding && <AddFoodSheet date={date} initialSlot={adding.slot} onClose={() => setAdding(null)} />}
       {editing && <EditLogSheet log={editing} onClose={() => setEditing(null)} />}
+      {ideas && <MealIdeasSheet profile={profile} date={date} initialKind="rest-of-day" onClose={() => setIdeas(false)} />}
     </main>
   );
 }

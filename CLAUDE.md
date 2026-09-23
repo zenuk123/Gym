@@ -43,6 +43,19 @@ The owner has **no Mac** — never introduce Xcode, Swift or Mac-only tooling. N
   series, 2px lines, hairline solid grids, dashed only for targets, selective labels, tooltips + `ChartTable`.
   Categorical colours must be validated (macro colours already are).
 
+## Coach & review (Phase 6)
+- AI lives in `features/coach/`. The SDK (`@anthropic-ai/sdk`) is only ever loaded with `import()` (see `claude.ts`),
+  so it stays out of the main bundle. `runLoop` is a manual streaming tool loop: it validates every tool input
+  (`tools.ts → validateInput`) because tools use `eager_input_streaming`, never runs tools on `refusal`/`max_tokens`,
+  and echoes turns via `echoable()` (server-side fallback rules).
+- Coach tools are **read-only** (`features/coach/tools.ts`). Never give the model a tool that writes; anything that
+  saves (meal ideas) happens only on an explicit user tap.
+- Model defaults: `claude-opus-5` with `fallbacks: 'default'` + beta `server-side-fallback-2026-07-01`; adaptive thinking,
+  `effort: 'medium'`. Structured output (`output_config.format`) for meal ideas.
+- AI settings (API key) live in the local `meta` table only — never add them to a synced table or backups.
+- Replies must label claims `[Fact]` / `[Calculation]` / `[Suggestion]` / `[General]`; `Rich.tsx` renders the pills.
+- Weekly review maths: `lib/calc/review.ts`; sleep maths: `lib/calc/sleep.ts` (pure + tested).
+
 ## UI conventions
 - Design for a 375–440 px wide iPhone first. Touch targets ≥ 44 px, inputs ≥ 16 px font (prevents iOS zoom).
 - Respect safe areas (`--safe-top`, `--safe-bottom`). Bottom nav is fixed; pages pad for it.

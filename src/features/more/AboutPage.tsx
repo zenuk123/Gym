@@ -5,10 +5,11 @@ import { isIOS, isStandalone, useOnline } from '../../pwa/platform';
 const PHASES = [
   { n: 1, title: 'Foundation', desc: 'Installable app, profile, targets, Today dashboard, offline + sync', done: true },
   { n: 2, title: 'Gym', desc: 'Routines, Gym Mode, set logging, PBs, progressive overload', done: true },
-  { n: 3, title: 'Progress', desc: 'Measurements, goals, photos, analytics' },
-  { n: 4, title: 'Nutrition', desc: 'Food database, custom foods, saved meals' },
-  { n: 5, title: 'Meal prep', desc: 'Weekly planner, shopping lists, AI meal ideas' },
-  { n: 6, title: 'AI coach', desc: 'Ask questions about your own data, weekly review' },
+  { n: 3, title: 'Progress', desc: 'Measurements, goals, photos, analytics', done: true },
+  { n: 4, title: 'Nutrition', desc: 'Food database, barcode scanner, custom foods, saved meals', done: true },
+  { n: 5, title: 'Meal prep', desc: 'Weekly planner, batch cooking, shopping lists', done: true },
+  { n: 6, title: 'AI coach', desc: 'Coach over your own data, AI meal ideas, weekly review, sleep', done: true },
+  { n: 7, title: 'Integrations', desc: 'Apple Health, wearables, native iOS wrapper — once the PWA is stable' },
 ];
 
 export function AboutPage() {

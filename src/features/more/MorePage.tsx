@@ -48,22 +48,11 @@ export function MorePage({ profile }: { profile: Profile }) {
         <Row to="/progress/goals" icon="trophy" tone="var(--pb)" title="Goals" desc="Weight, strength & measurement goals" />
       </div>
 
-      <h2 className="section-title">Coming soon</h2>
+      <h2 className="section-title">Coach</h2>
       <div className="list">
-        {[
-          { icon: 'brain' as const, title: 'AI coach', desc: 'Ask questions about your own training data' },
-          { icon: 'calendar' as const, title: 'Weekly review', desc: 'Your week in numbers, every Sunday' },
-        ].map((c) => (
-          <div key={c.title} className="list-row" style={{ '--tone': 'var(--text-3)', opacity: 0.7 } as React.CSSProperties}>
-            <span className="lead">
-              <Icon name={c.icon} />
-            </span>
-            <div className="grow">
-              <div className="title">{c.title}</div>
-              <div className="desc">{c.desc}</div>
-            </div>
-          </div>
-        ))}
+        <Row to="/more/coach" icon="brain" tone="var(--coach)" title="AI coach" desc="Ask about your training, food, weight and sleep" />
+        <Row to="/more/review" icon="calendar" tone="var(--coach)" title="Weekly review" desc="Your week in numbers, wins and focus" />
+        <Row to="/more/ai" icon="sparkles" tone="var(--text-2)" title="AI settings" desc="Connect Claude · stays on this device" />
       </div>
 
       <h2 className="section-title">App</h2>

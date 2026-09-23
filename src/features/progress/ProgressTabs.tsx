@@ -6,6 +6,7 @@ const TABS = [
   { to: '/progress/photos', label: 'Photos' },
   { to: '/progress/training', label: 'Training' },
   { to: '/progress/nutrition', label: 'Nutrition' },
+  { to: '/progress/sleep', label: 'Sleep' },
   { to: '/progress/goals', label: 'Goals' },
 ];
 

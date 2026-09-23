@@ -89,6 +89,18 @@ export async function weightsCSV(): Promise<string> {
   ]);
 }
 
+export async function sleepCSV(): Promise<string> {
+  const rows = alive(await db.sleep.orderBy('date').toArray());
+  return toCSV(rows, [
+    { header: 'wake_date', get: (r) => r.date },
+    { header: 'bed_time', get: (r) => r.bedTime },
+    { header: 'wake_time', get: (r) => r.wakeTime },
+    { header: 'duration_min', get: (r) => r.durationMin },
+    { header: 'quality_1_5', get: (r) => r.quality },
+    { header: 'note', get: (r) => r.note },
+  ]);
+}
+
 export async function foodCSV(): Promise<string> {
   const rows = alive(await db.foodLogs.orderBy('date').toArray());
   return toCSV(rows, [

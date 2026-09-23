@@ -27,6 +27,7 @@
   --pb: #fcc419;
   --streak: #ff6b3d;
   --coach: #63e6be;
+  --sleep: #5c7cfa;
   --danger: #ff6b6b;
   --success: #51cf66;
 
@@ -71,6 +72,7 @@
     --weight: #7048e8;
     --pb: #e67700;
     --coach: #0ca678;
+    --sleep: #4263eb;
     --shadow: 0 8px 30px rgba(15, 20, 25, 0.1);
     color-scheme: light;
   }
@@ -96,6 +98,7 @@
   --weight: #7048e8;
   --pb: #e67700;
   --coach: #0ca678;
+  --sleep: #4263eb;
   --shadow: 0 8px 30px rgba(15, 20, 25, 0.1);
   color-scheme: light;
 }

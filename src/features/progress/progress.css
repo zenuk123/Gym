@@ -332,3 +332,26 @@
   width: 76px;
   flex: none;
 }
+
+/* Sleep */
+.sleep-total {
+  font-size: 28px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  margin: -4px 0 0;
+}
+.sleep-total .faint {
+  font-size: 15px;
+  font-weight: 600;
+}
+.quality-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+.quality-row .chip {
+  min-height: 44px;
+  padding: 0 4px;
+  justify-content: center;
+  font-size: 13px;
+}
