@@ -1,0 +1,147 @@
+# Fitness OS
+
+A personal fitness operating system — training, nutrition and progress — built as a
+**mobile-first Progressive Web App**. It installs to an iPhone Home Screen from Safari,
+runs full-screen like a native app, and works offline in the gym.
+
+No Mac, Xcode or App Store needed: build from Windows, deploy from GitHub, test on your iPhone.
+
+## Status: Phase 1 — foundation ✅
+
+- Installable PWA (manifest, icons, iOS splash screens, standalone mode, service worker)
+- Offline-first: app shell is cached, all data lives on the phone (IndexedDB)
+- Onboarding: profile, goal, current + target weight, calorie + protein targets (Mifflin–St Jeor estimate, fully editable)
+- **Today** dashboard: workout slot, calories & protein remaining, body-weight trend, water, coach insight, PBs & consistency placeholders
+- Nutrition quick-add (calories + macros per meal), water tracking, weigh-ins with 7-day average & weekly rate
+- Progress: weight chart, weekly averages, history (edit/delete)
+- Optional cloud accounts + sync (Supabase) with an offline outbox, retries and last-write-wins conflict handling
+- Data ownership: JSON backup/restore, CSV export, erase
+- Dark mode (default), light mode, kg/lb, cm/ft-in
+
+Next: **Phase 2 — Gym** (routines, Gym Mode, set logging, PBs, progressive overload). See the roadmap below.
+
+---
+
+## 1. Put it on your iPhone (≈10 minutes, no Mac)
+
+The service worker (offline support + install) needs **HTTPS**, so the easiest path is a free host
+that builds straight from this GitHub repo.
+
+### Option A — Vercel (recommended, works with private repos)
+
+1. Go to <https://vercel.com>, sign in with GitHub.
+2. **Add New → Project → Import** this repository. Vercel detects Vite automatically — just press **Deploy**.
+3. You get a URL like `https://gym-xyz.vercel.app`. Every push to `main` redeploys; every branch gets a preview URL.
+
+(Netlify works the same way — `public/_redirects` is already included.)
+
+### Option B — GitHub Pages
+
+1. Repo **Settings → Pages → Source: GitHub Actions**.
+2. **Settings → Secrets and variables → Actions → Variables** → add `ENABLE_PAGES` = `true`.
+3. Push to `main`. The app appears at `https://<username>.github.io/<repo>/`.
+   (Private repos need a paid GitHub plan for Pages.)
+
+### Install it
+
+1. Open the URL in **Safari** on your iPhone.
+2. Tap **Share** → **Add to Home Screen** → **Add**.
+3. Launch **Fitness OS** from the Home Screen — it opens full-screen, and keeps working in airplane mode.
+
+When a new version is deployed, the app shows **"A new version is ready — Update"**; it never reloads on its own mid-entry.
+
+## 2. Develop on Windows
+
+Install [Node.js 22 LTS](https://nodejs.org), then:
+
+```bash
+npm install
+npm run dev        # http://localhost:5173 (also printed: a Network URL for your phone)
+npm test           # unit tests (calculations, sync engine, backup)
+npm run typecheck
+npm run build      # production build in dist/
+npm run preview    # serve the production build (service worker active)
+```
+
+To try the dev server on your iPhone, open the **Network** URL Vite prints (same Wi-Fi).
+Offline mode and installation need HTTPS, so test those on the deployed URL (a Vercel preview URL
+per branch is perfect for this).
+
+## 3. Optional: cloud accounts & sync (Supabase)
+
+Without this the app runs in **on-device mode** — everything works, data just lives on the phone
+(export backups from *More → Data & backup*). To add accounts, backup and multi-device sync:
+
+1. Create a free project at <https://supabase.com>.
+2. **SQL Editor** → paste and run [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql).
+3. **Project Settings → API**: copy the *Project URL* and the *anon public* key.
+4. Add them as environment variables where you build:
+   - Vercel: **Project → Settings → Environment Variables** → `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, then redeploy.
+   - GitHub Pages: repository **secrets** with the same names.
+   - Local: copy `.env.example` to `.env.local` and fill it in.
+5. (Optional) **Authentication → Providers → Email**: turn off "Confirm email" if you want to sign in immediately after sign-up.
+
+Then *More → Account & sync → Create account*. Anything already on the phone is uploaded on first sign-in.
+The anon key is safe to ship in the app: Row Level Security restricts every row to its owner.
+
+---
+
+## Architecture
+
+```
+ UI (React)  ──reads──▶  IndexedDB (Dexie)  ◀──live queries re-render the UI
+     │                        ▲
+     └─ writes via db/repo ───┤ record + outbox entry in ONE transaction
+                              │
+                        Sync engine (sync/)  ── push outbox, pull changes ──▶  Supabase (Postgres + RLS)
+```
+
+- **Local-first.** The phone's database is the source of truth for the UI. Nothing waits for the network.
+- **Outbox.** Every write queues its record id. Repeated edits coalesce; failed uploads retry with exponential backoff.
+- **No duplicates.** Ids are client-generated UUIDs and uploads are upserts, so resending is harmless.
+- **Conflicts.** Last write wins on `updatedAt`, enforced both on the device and by a Postgres trigger.
+- **Deletes** are soft (`deletedAt`) so they sync too.
+- **When sync runs.** iOS has no Background Sync API, so: on launch, when the network returns, when the app comes to
+  the foreground, ~1.5 s after a change, and every minute while open.
+- **App shell** is precached by a Workbox service worker (`vite-plugin-pwa`), so the app opens with no signal.
+
+### Project layout
+
+```
+src/
+  db/          types.ts (data model), db.ts (Dexie schema), repo.ts (all writes), hooks.ts (live queries)
+  sync/        engine.ts (push/pull), manager.ts (auth + triggers + status), remote.ts (Supabase), mapping.ts
+  lib/         dates, units, calc/ (nutrition + weight maths), insights (coach rules), backup (export/restore)
+  pwa/         service-worker update prompt, install prompt, platform helpers
+  components/  shared UI: BottomNav, Sheet, NumberField, LineChart, Toast, …
+  features/    onboarding/, today/, workout/, nutrition/, progress/, more/
+  styles/      tokens.css (colours, dark/light), base, layout, components
+supabase/migrations/   cloud schema
+scripts/generate-icons.mjs   regenerates icons + iOS splash screens from public/icons/icon.svg
+```
+
+### iPhone / PWA notes
+
+| Feature | iPhone behaviour |
+| --- | --- |
+| Install | Safari → Share → Add to Home Screen (no prompt API on iOS; the app shows instructions) |
+| Offline | ✅ service worker + IndexedDB |
+| Safe areas / Dynamic Island | ✅ `viewport-fit=cover` + `env(safe-area-inset-*)` everywhere |
+| Storage | Home Screen apps are exempt from Safari's 7-day storage cap; we also request persistent storage |
+| Background Sync API | ❌ not on iOS → syncs on open / reconnect / foreground instead |
+| Vibration | ❌ not on iOS → silently skipped (works on Android) |
+| Push notifications | iOS 16.4+ for installed apps only — planned for later |
+| Screen wake lock | iOS 16.4+ — will be used by Gym Mode (Phase 2) |
+
+To regenerate icons after editing `public/icons/icon.svg`:
+`npm i -D playwright && npx playwright install chromium && npm run icons`.
+
+## Roadmap
+
+1. **Foundation** — PWA, profile, targets, Today, offline + sync ✅
+2. **Gym** — exercise library, routines, Gym Mode, set logging (RPE, warm-up/drop/super sets), rest timer, PBs, progressive overload
+3. **Progress** — measurements, goals, progress photos, analytics
+4. **Nutrition** — food database, custom foods, saved meals, meal history
+5. **Meal prep** — weekly planner, shopping lists, AI meal generator
+6. **AI coach** — questions over your own data, weekly review
+7. **Integrations** — Apple Health, barcode scanner, wearables, native iOS wrapper (only once the PWA is stable)

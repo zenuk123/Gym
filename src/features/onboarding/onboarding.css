@@ -1,0 +1,92 @@
+.onboarding {
+  min-height: 100dvh;
+  gap: 18px;
+}
+.ob-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 -8px;
+}
+.ob-progress {
+  flex: 1;
+  display: flex;
+  gap: 6px;
+}
+.ob-progress span {
+  flex: 1;
+  height: 5px;
+  border-radius: 99px;
+  background: var(--surface-3);
+  transition: background 0.25s;
+}
+.ob-progress span.on {
+  background: var(--accent);
+}
+.ob-step {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+}
+.ob-step h1,
+.ob-welcome h1 {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.ob-step > p.muted {
+  margin-top: -8px;
+}
+.ob-welcome {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-top: 8vh;
+}
+.ob-welcome h1 {
+  font-size: 40px;
+}
+.ob-welcome .accent {
+  color: var(--accent-text);
+}
+.ob-logo {
+  border-radius: 24px;
+  box-shadow: 0 10px 40px rgba(198, 244, 50, 0.18);
+}
+.ob-points {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-weight: 600;
+}
+.ob-points li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ob-points svg {
+  width: 22px;
+  height: 22px;
+  color: var(--accent-text);
+}
+/* Primary action stays reachable with one thumb. */
+.ob-actions {
+  position: sticky;
+  bottom: 0;
+  margin: 0 calc(-1 * var(--gutter));
+  padding: 12px var(--gutter) calc(var(--safe-bottom) + 12px);
+  background: linear-gradient(to top, var(--bg) 70%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.onboarding.page.no-nav {
+  padding-bottom: 0;
+}

@@ -1,0 +1,149 @@
+/* ── App shell ──────────────────────────────────────────────────────────── */
+
+/* Opaque strip under the status bar / Dynamic Island so scrolled content never
+   collides with the clock (status bar style is black-translucent). */
+.status-scrim {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--safe-top);
+  background: var(--bg-blur);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  z-index: 40;
+}
+
+.page {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: calc(var(--safe-top) + 12px) calc(var(--gutter) + var(--safe-right))
+    calc(var(--nav-h) + var(--safe-bottom) + 28px) calc(var(--gutter) + var(--safe-left));
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: page-in 0.22s ease-out;
+}
+
+.page.no-nav {
+  padding-bottom: calc(var(--safe-bottom) + 24px);
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 2px 4px;
+}
+.page-header h1 {
+  font-family: var(--font-display);
+  font-size: 32px;
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.page-header .eyebrow {
+  color: var(--text-2);
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+
+.sub-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  margin: 0 -8px;
+}
+.sub-header h1 {
+  font-size: 20px;
+  font-weight: 700;
+  flex: 1;
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-3);
+  margin: 10px 4px -4px;
+}
+
+/* ── Bottom navigation ──────────────────────────────────────────────────── */
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  padding: 0 var(--safe-right) var(--safe-bottom) var(--safe-left);
+  background: var(--bg-blur);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-top: 1px solid var(--border);
+}
+.bottom-nav ul {
+  list-style: none;
+  margin: 0 auto;
+  padding: 0;
+  max-width: 640px;
+  height: var(--nav-h);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+}
+.bottom-nav a {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--text-3);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: color 0.15s;
+}
+.bottom-nav a svg {
+  width: 25px;
+  height: 25px;
+}
+.bottom-nav a.active {
+  color: var(--accent-text);
+}
+
+/* Desktop / tablet: centred column, roomier. Mobile stays the primary design. */
+@media (min-width: 900px) {
+  .page {
+    max-width: 720px;
+    padding-top: 32px;
+  }
+}
+
+/* Day switcher (Nutrition) */
+.day-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2px;
+  font-weight: 700;
+}
+.day-switch .icon-btn:disabled {
+  opacity: 0.3;
+}

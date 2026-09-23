@@ -1,0 +1,100 @@
+/* Design tokens. Dark is the default (gyms are dim, OLED iPhones love black). */
+:root {
+  --bg: #0b0d10;
+  --bg-blur: rgba(11, 13, 16, 0.78);
+  --surface: #151a21;
+  --surface-2: #1e252f;
+  --surface-3: #283140;
+  --border: #242c37;
+  --text: #eef1f5;
+  --text-2: #a3adbb;
+  --text-3: #6c7686;
+
+  --accent: #c6f432;
+  --accent-strong: #b2e21c;
+  --accent-ink: #0b0d10;
+  --accent-soft: rgba(198, 244, 50, 0.14);
+  /* lime text/icons: bright on dark, deep olive on light for contrast */
+  --accent-text: #c6f432;
+
+  --kcal: #ff9f43;
+  --protein: #4dabf7;
+  --carbs: #ffd43b;
+  --fat: #e599f7;
+  --water: #22d3ee;
+  --weight: #a78bfa;
+  --pb: #fcc419;
+  --streak: #ff6b3d;
+  --coach: #63e6be;
+  --danger: #ff6b6b;
+  --success: #51cf66;
+
+  --radius-sm: 10px;
+  --radius: 16px;
+  --radius-lg: 22px;
+  --shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+
+  --nav-h: 58px;
+  --tap: 48px; /* minimum comfortable touch target */
+  --gutter: 16px;
+
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    --bg: #f2f3f6;
+    --bg-blur: rgba(242, 243, 246, 0.8);
+    --surface: #ffffff;
+    --surface-2: #eef0f4;
+    --surface-3: #e1e5eb;
+    --border: #e3e6ec;
+    --text: #0f1419;
+    --text-2: #4f5a68;
+    --text-3: #8791a0;
+    --accent-soft: rgba(120, 170, 0, 0.14);
+    --accent-text: #4d7c0f;
+    --kcal: #f76707;
+    --protein: #1c7ed6;
+    --carbs: #e8a200;
+    --fat: #ae3ec9;
+    --water: #0c8599;
+    --weight: #7048e8;
+    --pb: #e67700;
+    --coach: #0ca678;
+    --shadow: 0 8px 30px rgba(15, 20, 25, 0.1);
+    color-scheme: light;
+  }
+}
+
+:root[data-theme='light'] {
+  --bg: #f2f3f6;
+  --bg-blur: rgba(242, 243, 246, 0.8);
+  --surface: #ffffff;
+  --surface-2: #eef0f4;
+  --surface-3: #e1e5eb;
+  --border: #e3e6ec;
+  --text: #0f1419;
+  --text-2: #4f5a68;
+  --text-3: #8791a0;
+  --accent-soft: rgba(120, 170, 0, 0.14);
+  --accent-text: #4d7c0f;
+  --kcal: #f76707;
+  --protein: #1c7ed6;
+  --carbs: #e8a200;
+  --fat: #ae3ec9;
+  --water: #0c8599;
+  --weight: #7048e8;
+  --pb: #e67700;
+  --coach: #0ca678;
+  --shadow: 0 8px 30px rgba(15, 20, 25, 0.1);
+  color-scheme: light;
+}
