@@ -32,6 +32,7 @@ import { AppearanceSettings } from './features/more/AppearanceSettings';
 import { AboutPage } from './features/more/AboutPage';
 import { ReviewPage } from './features/review/ReviewPage';
 import { AiSettingsPage } from './features/coach/AiSettingsPage';
+import { HealthImportPage } from './features/more/HealthImportPage';
 
 // The coach pulls in the Anthropic SDK, so it loads only when opened.
 const CoachPage = lazy(() => import('./features/coach/CoachPage').then((m) => ({ default: m.CoachPage })));
@@ -93,6 +94,7 @@ export function App() {
             <Route path="/more/about" element={<AboutPage />} />
             <Route path="/more/review" element={<ReviewPage profile={profile} />} />
             <Route path="/more/ai" element={<AiSettingsPage />} />
+            <Route path="/more/health" element={<HealthImportPage profile={profile} />} />
             <Route
               path="/more/coach"
               element={

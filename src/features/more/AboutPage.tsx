@@ -9,7 +9,7 @@ const PHASES = [
   { n: 4, title: 'Nutrition', desc: 'Food database, barcode scanner, custom foods, saved meals', done: true },
   { n: 5, title: 'Meal prep', desc: 'Weekly planner, batch cooking, shopping lists', done: true },
   { n: 6, title: 'AI coach', desc: 'Coach over your own data, AI meal ideas, weekly review, sleep', done: true },
-  { n: 7, title: 'Integrations', desc: 'Apple Health, wearables, native iOS wrapper — once the PWA is stable' },
+  { n: 7, title: 'Integrations', desc: 'Barcode scanner and Apple Health import done · native wrapper, live Health sync and wearables later' },
 ];
 
 export function AboutPage() {

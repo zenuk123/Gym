@@ -8,6 +8,16 @@ No Mac, Xcode or App Store needed: build from Windows, deploy from GitHub, test 
 
 ## Status
 
+### Phase 7 — Integrations (PWA-friendly parts) ✅
+- **Barcode scanner** (Nutrition → Add → scan): uses the camera with the built-in `BarcodeDetector` where available
+  and a bundled decoder otherwise, looks the product up on Open Food Facts, and lets you type the number when offline.
+- **Apple Health import** (*More → Data & backup → Import from Apple Health*): reads the Health app's
+  "Export All Health Data" file **on the phone** (never uploaded) and adds your weight history and sleep, including
+  Apple Watch sleep stages, for days you haven't logged. One weigh-in per day, one night per wake-up date,
+  no double counting when both the phone and the watch recorded a night, and nothing is overwritten.
+- **Native app, live HealthKit sync, Health Connect and wearables** stay deliberately out of the PWA — see
+  [§5](#5-later-a-native-wrapper-still-no-mac) for the path, which still needs no Mac.
+
 ### Phase 6 — AI coach, weekly review, sleep ✅
 - **AI coach** (*More → AI coach*): chat with Claude about **your own data**. It uses read-only tools to look up
   your profile and targets, weight trend, training summary, exercise history, programme, nutrition, food log, sleep,
@@ -109,7 +119,7 @@ No Mac, Xcode or App Store needed: build from Windows, deploy from GitHub, test 
 - Data ownership: JSON backup/restore, CSV export, erase
 - Dark mode (default), light mode, kg/lb, cm/ft-in
 
-Next: **Phase 7 — integrations** (see the roadmap).
+All seven phases are in place. What's left is the optional native wrapper (§5).
 
 ---
 
@@ -196,6 +206,28 @@ supabase functions deploy claude
 
 Then pick *More → AI settings → My server* in the app (it appears once cloud sync is configured and you're signed in).
 
+## 5. Later: a native wrapper (still no Mac)
+
+The PWA covers everything in the spec except things iOS only allows native apps to do: **live** HealthKit
+read/write, Apple Watch apps, widgets, and reliable background notifications. When the PWA has been stable for a
+while, the plan is:
+
+1. **Wrap, don't rewrite.** Add [Capacitor](https://capacitorjs.com) around the existing `dist/` build
+   (`npm i @capacitor/core @capacitor/ios && npx cap add ios`). The React app, IndexedDB data layer, sync engine and
+   Supabase backend stay as they are; native features become small plugins behind the same interfaces
+   (e.g. a `HealthSource` that the Apple Health import already defines the shape of: weigh-ins + nights).
+2. **Build in the cloud.** Xcode only runs on macOS, but hosted macOS builders do it for you from GitHub:
+   GitHub Actions `macos-latest` runners, Codemagic or Ionic Appflow. They sign the app and upload it to
+   TestFlight, so installing it on the iPhone happens through the TestFlight app. Code signing needs an
+   **Apple Developer Program** membership (paid, yearly) — that's the only new requirement.
+3. **HealthKit.** A HealthKit plugin replaces the file import with live reads of body mass and sleep analysis
+   (and could write workouts back). The app must request each permission, and Apple reviews HealthKit usage.
+4. **Android later.** The same wrapper with `@capacitor/android` and a Health Connect plugin covers Android.
+5. **Wearables** (Garmin, Oura, Whoop …) use OAuth web APIs. Those belong in Supabase Edge Functions (tokens stay
+   server-side) that write into the same tables, so the app needs no changes to show the data.
+
+Until then, the PWA keeps working offline, installs from Safari, and imports Apple Health data by file.
+
 ---
 
 ## Architecture
@@ -248,6 +280,8 @@ scripts/generate-icons.mjs   regenerates icons + iOS splash screens from public/
 | Background Sync API | ❌ not on iOS → syncs on open / reconnect / foreground instead |
 | Vibration | ❌ not on iOS → silently skipped (works on Android) |
 | Push notifications | iOS 16.4+ for installed apps only — planned for later |
+| Apple Health | No web API — import the Health export file (weight + sleep); live sync needs the native wrapper (§5) |
+| Camera (barcode) | ✅ `getUserMedia`; the camera permission is asked the first time you scan |
 | Screen wake lock | Used in Gym Mode where supported (recent iOS Home Screen apps); otherwise the screen may dim |
 | Rest-timer alert | Beep plays when the app is open; iOS can't run timers in the background, so if you lock the phone the timer is correct when you return but won't alert |
 
@@ -262,4 +296,4 @@ To regenerate icons after editing `public/icons/icon.svg`:
 4. **Nutrition** — food database, custom foods, saved meals, meal history ✅
 5. **Meal prep** — weekly planner, shopping lists, AI meal generator ✅
 6. **AI coach** — questions over your own data, AI meal generator, weekly review, sleep ✅
-7. **Integrations** — Apple Health, barcode scanner, wearables, native iOS wrapper (only once the PWA is stable)
+7. **Integrations** — barcode scanner ✅, Apple Health import ✅; native wrapper, live HealthKit / Health Connect and wearables once the PWA is stable (§5)

@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Icon } from '../../components/Icon';
 import { SubHeader } from '../../components/PageHeader';
 import { useToast } from '../../components/Toast';
@@ -71,6 +72,22 @@ export function DataSettings() {
           e.target.value = '';
         }}
       />
+
+      <h2 className="section-title">Import</h2>
+      <div className="list">
+        <Link to="/more/health" className="list-row" style={{ '--tone': 'var(--danger)' } as React.CSSProperties}>
+          <span className="lead">
+            <Icon name="heart" />
+          </span>
+          <div className="grow">
+            <div className="title">Import from Apple Health</div>
+            <div className="desc">Weight history and sleep (incl. Apple Watch)</div>
+          </div>
+          <span className="trail">
+            <Icon name="chevronRight" />
+          </span>
+        </Link>
+      </div>
 
       <h2 className="section-title">Spreadsheet (CSV)</h2>
       <div className="list">

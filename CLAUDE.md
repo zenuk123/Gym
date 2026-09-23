@@ -56,6 +56,13 @@ The owner has **no Mac** — never introduce Xcode, Swift or Mac-only tooling. N
 - Replies must label claims `[Fact]` / `[Calculation]` / `[Suggestion]` / `[General]`; `Rich.tsx` renders the pills.
 - Weekly review maths: `lib/calc/review.ts`; sleep maths: `lib/calc/sleep.ts` (pure + tested).
 
+## Integrations (Phase 7)
+- Apple Health: `lib/healthImport.ts` streams the Health `export.xml` (can be hundreds of MB — never read it whole)
+  and returns weigh-ins + nights; `features/more/HealthImportPage.tsx` imports only dates not already logged,
+  via `repo.createMany` (one transaction, still queued for sync).
+- Native wrapper, live HealthKit / Health Connect and wearables are future work (README §5): Capacitor + cloud
+  macOS builds, never local Xcode.
+
 ## UI conventions
 - Design for a 375–440 px wide iPhone first. Touch targets ≥ 44 px, inputs ≥ 16 px font (prevents iOS zoom).
 - Respect safe areas (`--safe-top`, `--safe-bottom`). Bottom nav is fixed; pages pad for it.

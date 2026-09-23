@@ -899,3 +899,36 @@ a.list-row:active {
 .review-score .pill {
   margin-left: 4px;
 }
+
+.steps {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 15px;
+  line-height: 1.4;
+}
+.check-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 44px;
+  cursor: pointer;
+}
+.check-row input {
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+  accent-color: var(--accent);
+  flex: none;
+}
+.check-row .grow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.check-row .desc {
+  font-size: 13px;
+  color: var(--text-2);
+}

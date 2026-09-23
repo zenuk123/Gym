@@ -49,6 +49,23 @@ export async function create<T extends SyncTable>(name: T, data: NewRecord<T>): 
   return saved;
 }
 
+/** Create many records in one transaction (imports). Each still gets an outbox entry, so it syncs. */
+export async function createMany<T extends SyncTable>(name: T, rows: NewRecord<T>[]): Promise<number> {
+  if (!rows.length) return 0;
+  const t = table(name);
+  await db.transaction('rw', t, db.outbox, async () => {
+    let now = nextTimestamp();
+    for (const data of rows) {
+      const id = data.id ?? newId();
+      now = nextTimestamp(now);
+      await t.put({ ...data, id, createdAt: now, updatedAt: now, deletedAt: null } as SyncTableMap[T]);
+      await enqueue(name, id, now);
+    }
+  });
+  notifyLocalChange();
+  return rows.length;
+}
+
 /** Patch an existing record. Returns undefined if it doesn't exist. */
 export async function update<T extends SyncTable>(
   name: T,
