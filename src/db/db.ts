@@ -1,6 +1,7 @@
 import Dexie, { type EntityTable } from 'dexie';
 import type {
   Exercise,
+  Food,
   FoodLog,
   Measurement,
   MetaEntry,
@@ -8,6 +9,7 @@ import type {
   PhotoFile,
   Profile,
   ProgressPhoto,
+  SavedMeal,
   Routine,
   WaterLog,
   WeightEntry,
@@ -33,6 +35,8 @@ export class FitnessDB extends Dexie {
   goals!: EntityTable<UserGoal, 'id'>;
   photos!: EntityTable<ProgressPhoto, 'id'>;
   photoFiles!: EntityTable<PhotoFile, 'id'>;
+  foods!: EntityTable<Food, 'id'>;
+  meals!: EntityTable<SavedMeal, 'id'>;
   outbox!: EntityTable<OutboxEntry, 'key'>;
   meta!: EntityTable<MetaEntry, 'key'>;
 
@@ -58,6 +62,11 @@ export class FitnessDB extends Dexie {
       goals: 'id, updatedAt',
       photos: 'id, date, updatedAt',
       photoFiles: 'id, remote',
+    });
+    // Phase 4: nutrition
+    this.version(4).stores({
+      foods: 'id, name, barcode, updatedAt',
+      meals: 'id, name, updatedAt',
     });
   }
 }

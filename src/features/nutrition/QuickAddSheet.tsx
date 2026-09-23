@@ -14,7 +14,7 @@ export const MEALS: { value: MealSlot; label: string }[] = [
   { value: 'snack', label: 'Snack' },
 ];
 
-function mealForNow(): MealSlot {
+export function mealForNow(): MealSlot {
   const h = new Date().getHours();
   if (h < 11) return 'breakfast';
   if (h < 15) return 'lunch';
@@ -22,13 +22,10 @@ function mealForNow(): MealSlot {
   return 'snack';
 }
 
-/**
- * Quick-add calories + macros. The full food database arrives in Phase 4;
- * quick entries stay valid alongside it.
- */
-export function QuickAddSheet({ date, onClose }: { date: ISODate; onClose: () => void }) {
+/** Quick-add calories + macros without picking a food (e.g. a restaurant meal). */
+export function QuickAddSheet({ date, initialSlot, onClose }: { date: ISODate; initialSlot?: MealSlot; onClose: () => void }) {
   const toast = useToast();
-  const [meal, setMeal] = useState<MealSlot>(mealForNow);
+  const [meal, setMeal] = useState<MealSlot>(initialSlot ?? mealForNow());
   const [name, setName] = useState('');
   const [kcal, setKcal] = useState('');
   const [protein, setProtein] = useState('');

@@ -8,6 +8,19 @@ No Mac, Xcode or App Store needed: build from Windows, deploy from GitHub, test 
 
 ## Status
 
+### Phase 4 — Nutrition ✅
+- **Food database:** about 100 common foods built in (per-100 g values, works offline), plus **your own foods**
+  (per 100 g or per serving, with a serving size). You can star favourites.
+- **Online lookup + barcode scanner:** search **Open Food Facts** (free, no key) or scan a barcode with the camera.
+  Anything you pick is saved to your foods, so it works offline next time.
+- **Fast logging:** the Add food sheet shows recent foods (with the amount you usually have), favourites, saved meals
+  and search. Pick a food, choose servings or grams, and see a live calorie/protein/carbs/fat preview.
+  Quick-add calories is still there.
+- **Saved meals & recipes:** save any logged meal in one tap, or build a recipe from ingredients.
+  "Makes N servings" is for batch cooking, and you log with one tap.
+- **Meal history:** a day switcher with a date picker, tap an entry to change its amount or meal, "Log again",
+  "Same as yesterday" per meal, and fibre in the day's totals. Averages and trends are in Progress → Nutrition.
+
 ### Phase 3 — Progress ✅
 - **Progress tab sections:** Overview · Body · Photos · Training · Nutrition · Goals.
 - **Goals:** body weight and weekly sessions (from your profile), plus your own **strength goals** (e.g. Bench Press
@@ -59,7 +72,7 @@ No Mac, Xcode or App Store needed: build from Windows, deploy from GitHub, test 
 - Data ownership: JSON backup/restore, CSV export, erase
 - Dark mode (default), light mode, kg/lb, cm/ft-in
 
-Next: **Phase 4 — Nutrition** (food database, custom foods, saved meals, meal history).
+Next: **Phase 5 — Meal prep** (weekly planner, shopping list, AI meal ideas).
 
 ---
 
@@ -115,7 +128,7 @@ Without this the app runs in **on-device mode** — everything works, data just 
 
 1. Create a free project at <https://supabase.com>.
 2. **SQL Editor** → paste and run each file in [`supabase/migrations/`](supabase/migrations/) in order
-   (`0001_init.sql`, `0002_training.sql`, `0003_progress.sql`). When a new phase adds a migration, run just the new file.
+   (`0001_init.sql` … `0004_nutrition.sql`). When a new phase adds a migration, run just the new file.
    `0003` also creates the private `progress-photos` storage bucket (owner-only access).
 3. **Project Settings → API**: copy the *Project URL* and the *anon public* key.
 4. Add them as environment variables where you build:
@@ -188,7 +201,7 @@ To regenerate icons after editing `public/icons/icon.svg`:
 1. **Foundation** — PWA, profile, targets, Today, offline + sync ✅
 2. **Gym** — exercise library, routines, Gym Mode, set logging (RPE, warm-up/drop/super sets), rest timer, PBs, progressive overload ✅
 3. **Progress** — measurements, goals, progress photos, analytics ✅
-4. **Nutrition** — food database, custom foods, saved meals, meal history
+4. **Nutrition** — food database, custom foods, saved meals ✅, meal history
 5. **Meal prep** — weekly planner, shopping lists, AI meal generator
 6. **AI coach** — questions over your own data, weekly review
 7. **Integrations** — Apple Health, barcode scanner, wearables, native iOS wrapper (only once the PWA is stable)

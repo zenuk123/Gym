@@ -3,12 +3,14 @@ import { db } from './db';
 import {
   PROFILE_ID,
   type Exercise,
+  type Food,
   type FoodLog,
   type ISODate,
   type Measurement,
   type Profile,
   type ProgressPhoto,
   type Routine,
+  type SavedMeal,
   type UserGoal,
   type WaterLog,
   type WeightEntry,
@@ -108,4 +110,25 @@ export function useGoals(): UserGoal[] | undefined {
 /** Progress photo metadata, newest first. */
 export function usePhotos(): ProgressPhoto[] | undefined {
   return useLiveQuery(async () => (await db.photos.orderBy('date').reverse().toArray()).filter(alive));
+}
+
+// ── Nutrition ────────────────────────────────────────────────────────────
+
+/** All foods (built-in + yours), sorted by name. */
+export function useFoods(): Food[] | undefined {
+  return useLiveQuery(async () => (await db.foods.toArray()).filter(alive).sort((a, b) => a.name.localeCompare(b.name)));
+}
+
+export function useSavedMeals(): SavedMeal[] | undefined {
+  return useLiveQuery(async () => (await db.meals.toArray()).filter(alive).sort((a, b) => a.name.localeCompare(b.name)));
+}
+
+/** Food logs from the last `days` days — for "recent foods" and search ranking. */
+export function useRecentFoodLogs(days = 60): FoodLog[] | undefined {
+  return useLiveQuery(async () => {
+    const d = new Date();
+    d.setDate(d.getDate() - days);
+    const from = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return (await db.foodLogs.where('date').aboveOrEqual(from).toArray()).filter(alive);
+  }, [days]);
 }

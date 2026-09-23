@@ -5,7 +5,7 @@ import { ProgressBar } from '../../../components/ProgressBar';
 import type { Profile } from '../../../db/types';
 import { formatInt } from '../../../lib/format';
 import type { Intake } from '../../../lib/intake';
-import { QuickAddSheet } from '../../nutrition/QuickAddSheet';
+import { AddFoodSheet } from '../../nutrition/AddFoodSheet';
 
 export function NutritionCard({ profile, intake, date }: { profile: Profile; intake: Intake; date: string }) {
   const [adding, setAdding] = useState(false);
@@ -49,9 +49,9 @@ export function NutritionCard({ profile, intake, date }: { profile: Profile; int
       </div>
       <button className="btn btn-block" onClick={() => setAdding(true)}>
         <Icon name="plus" />
-        Quick add food
+        Add food
       </button>
-      {adding && <QuickAddSheet date={date} onClose={() => setAdding(false)} />}
+      {adding && <AddFoodSheet date={date} onClose={() => setAdding(false)} />}
     </section>
   );
 }

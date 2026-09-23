@@ -1,0 +1,160 @@
+import type { Food, FoodCategory } from '../types';
+import { seedLocal } from '../repo';
+import { slug } from './exercises';
+
+/**
+ * Starter food database: common foods, nutrition per 100 g (or 100 ml).
+ * Values are typical averages (UK/USDA reference data) — good enough for
+ * tracking; packaged foods can be looked up by barcode / Open Food Facts.
+ * Ids are stable ("food-<slug>"); never change an existing one.
+ */
+type Def = [
+  name: string,
+  category: FoodCategory,
+  kcal: number,
+  protein: number,
+  carbs: number,
+  fat: number,
+  fibre: number | null,
+  servingG?: number,
+  servingName?: string,
+  unit?: 'g' | 'ml',
+];
+
+const DEFS: Def[] = [
+  // Meat, fish & other protein
+  ['Chicken breast (raw)', 'meat', 106, 24, 0, 1.1, 0, 150, '1 breast'],
+  ['Chicken breast (cooked)', 'meat', 165, 31, 0, 3.6, 0, 120, '1 breast'],
+  ['Chicken thigh, skinless (raw)', 'meat', 121, 20, 0, 4.5, 0, 90, '1 thigh'],
+  ['Turkey mince, 5% fat (raw)', 'meat', 128, 20, 0, 5, 0, 125, '¼ pack'],
+  ['Beef mince, 5% fat (raw)', 'meat', 125, 21, 0, 4.5, 0, 125, '¼ pack'],
+  ['Beef mince, 20% fat (raw)', 'meat', 250, 17, 0, 20, 0, 125, '¼ pack'],
+  ['Sirloin steak (raw)', 'meat', 180, 24, 0, 9, 0, 225, '1 steak'],
+  ['Pork loin chop (raw)', 'meat', 170, 21, 0, 9, 0, 150, '1 chop'],
+  ['Pork sausage', 'meat', 260, 13, 9, 19, 1, 57, '1 sausage'],
+  ['Back bacon (raw)', 'meat', 215, 16.5, 0, 16.5, 0, 25, '1 rasher'],
+  ['Ham, sliced', 'meat', 107, 18, 1.4, 3.3, 0, 30, '2 slices'],
+  ['Salmon fillet (raw)', 'meat', 208, 20, 0, 13, 0, 120, '1 fillet'],
+  ['Cod fillet (raw)', 'meat', 82, 18, 0, 0.7, 0, 140, '1 fillet'],
+  ['Tuna in spring water (drained)', 'meat', 109, 25, 0, 1, 0, 112, '1 can'],
+  ['King prawns (cooked)', 'meat', 99, 23.6, 0.2, 0.9, 0, 150, '1 pack'],
+  ['Tofu, firm', 'meat', 144, 15.7, 3.5, 8.7, 2.3, 100, '¼ block'],
+  // Dairy & eggs
+  ['Egg (large)', 'dairy', 143, 12.6, 0.7, 9.5, 0, 58, '1 egg'],
+  ['Egg whites (liquid)', 'dairy', 52, 11, 0.7, 0.2, 0, 100, '100 ml'],
+  ['Whole milk', 'dairy', 64, 3.3, 4.7, 3.6, 0, 250, '1 glass', 'ml'],
+  ['Semi-skimmed milk', 'dairy', 47, 3.5, 4.8, 1.7, 0, 250, '1 glass', 'ml'],
+  ['Skimmed milk', 'dairy', 35, 3.4, 5, 0.1, 0, 250, '1 glass', 'ml'],
+  ['Oat milk', 'dairy', 45, 1, 6.6, 1.5, 0.8, 250, '1 glass', 'ml'],
+  ['Greek yoghurt, 0% fat', 'dairy', 57, 10, 3.6, 0.2, 0, 170, '1 pot'],
+  ['Greek yoghurt, full fat', 'dairy', 93, 9, 3, 5, 0, 170, '1 pot'],
+  ['Skyr', 'dairy', 63, 11, 4, 0.2, 0, 150, '1 pot'],
+  ['Cottage cheese', 'dairy', 98, 11, 3.4, 4.3, 0, 100, '½ tub'],
+  ['Cheddar cheese', 'dairy', 416, 25, 0.1, 34.9, 0, 30, '1 slice'],
+  ['Mozzarella', 'dairy', 250, 18.5, 1, 19, 0, 125, '1 ball'],
+  ['Feta', 'dairy', 264, 14, 4, 21, 0, 30, '1 portion'],
+  ['Butter', 'dairy', 717, 0.9, 0.1, 81, 0, 10, '1 knob'],
+  // Fruit
+  ['Banana', 'fruit', 89, 1.1, 22.8, 0.3, 2.6, 118, '1 medium'],
+  ['Apple', 'fruit', 52, 0.3, 13.8, 0.2, 2.4, 182, '1 medium'],
+  ['Orange', 'fruit', 47, 0.9, 11.8, 0.1, 2.4, 131, '1 medium'],
+  ['Blueberries', 'fruit', 57, 0.7, 14.5, 0.3, 2.4, 80, '1 handful'],
+  ['Strawberries', 'fruit', 32, 0.7, 7.7, 0.3, 2, 80, '1 handful'],
+  ['Raspberries', 'fruit', 52, 1.2, 12, 0.7, 6.5, 80, '1 handful'],
+  ['Grapes', 'fruit', 69, 0.7, 18, 0.2, 0.9, 80, '1 handful'],
+  ['Mango', 'fruit', 60, 0.8, 15, 0.4, 1.6, 100, '½ mango'],
+  ['Pineapple', 'fruit', 50, 0.5, 13, 0.1, 1.4, 80, '1 slice'],
+  ['Avocado', 'fruit', 160, 2, 8.5, 14.7, 6.7, 75, '½ avocado'],
+  ['Raisins', 'fruit', 299, 3.1, 79, 0.5, 3.7, 30, '1 small box'],
+  ['Medjool dates', 'fruit', 277, 1.8, 75, 0.2, 6.7, 24, '1 date'],
+  ['Orange juice', 'fruit', 45, 0.7, 10.4, 0.2, 0.2, 250, '1 glass', 'ml'],
+  // Vegetables & pulses
+  ['Broccoli', 'vegetables', 34, 2.8, 7, 0.4, 2.6, 80, '1 portion'],
+  ['Spinach', 'vegetables', 23, 2.9, 3.6, 0.4, 2.2, 30, '1 handful'],
+  ['Carrots', 'vegetables', 41, 0.9, 9.6, 0.2, 2.8, 80, '1 medium'],
+  ['Red pepper', 'vegetables', 31, 1, 6, 0.3, 2.1, 120, '1 pepper'],
+  ['Onion', 'vegetables', 40, 1.1, 9.3, 0.1, 1.7, 110, '1 medium'],
+  ['Tomatoes', 'vegetables', 18, 0.9, 3.9, 0.2, 1.2, 85, '1 tomato'],
+  ['Chopped tomatoes (canned)', 'vegetables', 22, 1.2, 3.8, 0.2, 1, 400, '1 can'],
+  ['Cucumber', 'vegetables', 15, 0.7, 3.6, 0.1, 0.5, 80, '¼ cucumber'],
+  ['Mixed salad leaves', 'vegetables', 15, 1.4, 2, 0.2, 1.3, 40, '1 bowl'],
+  ['Green beans', 'vegetables', 31, 1.8, 7, 0.1, 2.7, 80, '1 portion'],
+  ['Peas (frozen)', 'vegetables', 81, 5.4, 14, 0.4, 5.1, 80, '1 portion'],
+  ['Sweetcorn', 'vegetables', 86, 3.3, 19, 1.4, 2, 80, '1 portion'],
+  ['Mushrooms', 'vegetables', 22, 3.1, 3.3, 0.3, 1, 80, '1 handful'],
+  ['Courgette', 'vegetables', 17, 1.2, 3.1, 0.3, 1, 200, '1 courgette'],
+  ['Cauliflower', 'vegetables', 25, 1.9, 5, 0.3, 2, 80, '1 portion'],
+  ['Sweet potato (raw)', 'vegetables', 86, 1.6, 20, 0.1, 3, 150, '1 medium'],
+  ['Potatoes (raw)', 'vegetables', 77, 2, 17, 0.1, 2.2, 200, '1 medium'],
+  ['Kidney beans (canned, drained)', 'vegetables', 127, 8.7, 22.8, 0.5, 6.4, 120, '½ can'],
+  ['Chickpeas (canned, drained)', 'vegetables', 139, 7, 20, 2.6, 5, 120, '½ can'],
+  ['Baked beans', 'vegetables', 81, 4.7, 12.5, 0.2, 3.7, 207, '½ can'],
+  ['Red lentils (dry)', 'vegetables', 352, 24.6, 63, 1.1, 10.7, 60, '1 portion'],
+  // Carbohydrates
+  ['Rolled oats', 'carbs', 379, 13.2, 67.7, 6.5, 10, 40, '1 bowl'],
+  ['White rice (dry)', 'carbs', 360, 6.6, 79, 0.6, 1.3, 75, '1 portion'],
+  ['White rice (cooked)', 'carbs', 130, 2.7, 28, 0.3, 0.4, 180, '1 portion'],
+  ['Brown rice (dry)', 'carbs', 362, 7.5, 76, 2.7, 3.4, 75, '1 portion'],
+  ['Microwave rice pouch', 'carbs', 150, 3.2, 31, 1.6, 1, 250, '1 pouch'],
+  ['Pasta (dry)', 'carbs', 371, 13, 75, 1.5, 3.2, 75, '1 portion'],
+  ['Pasta (cooked)', 'carbs', 158, 5.8, 31, 0.9, 1.8, 180, '1 portion'],
+  ['Egg noodles (dry)', 'carbs', 384, 14, 71, 4.4, 3.3, 65, '1 nest'],
+  ['Couscous (dry)', 'carbs', 376, 12.8, 77, 0.6, 5, 60, '1 portion'],
+  ['Quinoa (dry)', 'carbs', 368, 14, 64, 6, 7, 60, '1 portion'],
+  ['Wholemeal bread', 'carbs', 247, 13, 41, 3.4, 7, 40, '1 slice'],
+  ['White bread', 'carbs', 265, 9, 49, 3.2, 2.7, 40, '1 slice'],
+  ['Bagel', 'carbs', 257, 10, 50, 1.6, 2, 85, '1 bagel'],
+  ['Tortilla wrap', 'carbs', 310, 8.5, 52, 7.4, 3, 62, '1 wrap'],
+  ['Granola', 'carbs', 471, 10, 64, 20, 5, 45, '1 bowl'],
+  ['Cornflakes', 'carbs', 357, 7.5, 84, 0.4, 3, 30, '1 bowl'],
+  ['Weetabix', 'carbs', 362, 12, 69, 2, 10, 37.5, '2 biscuits'],
+  ['Rice cakes', 'carbs', 387, 8, 81.5, 2.8, 4, 9, '1 cake'],
+  // Snacks & sweets
+  ['Peanut butter', 'snacks', 588, 25, 20, 50, 6, 15, '1 tbsp'],
+  ['Almonds', 'snacks', 579, 21, 22, 50, 12.5, 30, '1 handful'],
+  ['Mixed nuts', 'snacks', 607, 20, 21, 54, 7, 30, '1 handful'],
+  ['Dark chocolate (70%)', 'snacks', 598, 7.8, 46, 43, 11, 20, '2 squares'],
+  ['Milk chocolate', 'snacks', 535, 7.7, 59, 30, 3.4, 45, '1 bar'],
+  ['Protein bar', 'snacks', 350, 33, 30, 12, 8, 60, '1 bar'],
+  ['Crisps', 'snacks', 536, 7, 53, 34, 4.4, 25, '1 bag'],
+  ['Hummus', 'snacks', 280, 7, 13, 22, 6, 50, '2 tbsp'],
+  ['Digestive biscuit', 'snacks', 480, 7, 62, 21, 3.6, 15, '1 biscuit'],
+  ['Honey', 'snacks', 304, 0.3, 82, 0, 0, 21, '1 tbsp'],
+  ['Strawberry jam', 'snacks', 250, 0.4, 60, 0.1, 1, 15, '1 tbsp'],
+  // Other
+  ['Whey protein powder', 'other', 400, 78, 8, 6, 0, 30, '1 scoop'],
+  ['Olive oil', 'other', 884, 0, 0, 100, 0, 14, '1 tbsp'],
+  ['Mayonnaise', 'other', 680, 1, 0.6, 75, 0, 15, '1 tbsp'],
+  ['Tomato ketchup', 'other', 112, 1.2, 26, 0.1, 0.3, 15, '1 tbsp'],
+  ['Cola', 'other', 42, 0, 10.6, 0, 0, 330, '1 can', 'ml'],
+  ['Lager', 'other', 43, 0.5, 3.6, 0, 0, 568, '1 pint', 'ml'],
+  ['Latte (semi-skimmed)', 'other', 44, 3, 4.4, 1.6, 0, 350, '1 medium', 'ml'],
+];
+
+export const builtInFoodId = (name: string) => `food-${slug(name)}`;
+
+export const BUILT_IN_FOODS: Food[] = DEFS.map(([name, category, kcal, proteinG, carbsG, fatG, fibreG, servingG, servingName, unit = 'g']) => ({
+  id: builtInFoodId(name),
+  name,
+  brand: null,
+  category,
+  unit,
+  kcal,
+  proteinG,
+  carbsG,
+  fatG,
+  fibreG,
+  servingG: servingG ?? null,
+  servingName: servingName ?? null,
+  barcode: null,
+  source: 'builtin',
+  favourite: false,
+  archived: false,
+  createdAt: 0,
+  updatedAt: 0,
+  deletedAt: null,
+}));
+
+export function seedFoods(): Promise<number> {
+  return seedLocal('foods', BUILT_IN_FOODS);
+}

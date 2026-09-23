@@ -55,11 +55,68 @@ export interface FoodLog extends SyncFields {
   date: ISODate;
   meal: MealSlot;
   name: string;
+  /** Nutrition is a snapshot at log time, so editing a food later never rewrites history. */
   kcal: number;
   proteinG: number;
   carbsG: number | null;
   fatG: number | null;
   fibreG: number | null;
+  /** Source food and amount (absent for quick adds and entries made before Phase 4). */
+  foodId?: string | null;
+  amountG?: number | null;
+  /** Logged from a saved meal. */
+  savedMealId?: string | null;
+  servings?: number | null;
+}
+
+// ── Nutrition (Phase 4) ──────────────────────────────────────────────────
+
+/** Shopping-list aisles (spec: meat, dairy, fruit, vegetables, carbohydrates, snacks, other). */
+export const FOOD_CATEGORIES = ['meat', 'dairy', 'fruit', 'vegetables', 'carbs', 'snacks', 'other'] as const;
+export type FoodCategory = (typeof FOOD_CATEGORIES)[number];
+
+/** A food with nutrition per 100 g (or 100 ml). */
+export interface Food extends SyncFields {
+  name: string;
+  brand: string | null;
+  category: FoodCategory;
+  unit: 'g' | 'ml';
+  kcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  fibreG: number | null;
+  /** Typical portion, e.g. 1 egg = 50 g. */
+  servingG: number | null;
+  servingName: string | null;
+  barcode: string | null;
+  source: 'builtin' | 'custom' | 'openfoodfacts' | 'ai';
+  favourite: boolean;
+  archived: boolean;
+}
+
+/** An ingredient line. Nutrition is stored for the given grams, so a meal is self-contained. */
+export interface MealItem {
+  key: string;
+  foodId: string | null;
+  name: string;
+  grams: number;
+  category: FoodCategory;
+  kcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  fibreG: number | null;
+}
+
+/** A saved meal / recipe. `servings` = how many portions the ingredients make (meal prep). */
+export interface SavedMeal extends SyncFields {
+  name: string;
+  slot: MealSlot | null;
+  servings: number;
+  items: MealItem[];
+  notes: string | null;
+  favourite: boolean;
 }
 
 export interface WaterLog extends SyncFields {
@@ -239,6 +296,8 @@ export interface SyncTableMap {
   measurements: Measurement;
   goals: UserGoal;
   photos: ProgressPhoto;
+  foods: Food;
+  meals: SavedMeal;
 }
 export type SyncTable = keyof SyncTableMap;
 
@@ -254,6 +313,8 @@ export const REMOTE_TABLES: Record<SyncTable, string> = {
   measurements: 'measurements',
   goals: 'goals',
   photos: 'progress_photos',
+  foods: 'foods',
+  meals: 'saved_meals',
 };
 
 export const SYNC_TABLES = Object.keys(REMOTE_TABLES) as SyncTable[];

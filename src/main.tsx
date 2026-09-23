@@ -7,6 +7,7 @@ import { applyTheme, watchSystemTheme } from './lib/theme';
 import { requestPersistentStorage } from './pwa/storage';
 import { startSync } from './sync/manager';
 import { seedExercises } from './db/seed/exercises';
+import { seedFoods } from './db/seed/foods';
 import './styles/tokens.css';
 import './styles/base.css';
 import './styles/layout.css';
@@ -16,6 +17,7 @@ applyTheme();
 watchSystemTheme();
 void requestPersistentStorage();
 void seedExercises().catch((err) => console.warn('Exercise library seed failed', err));
+void seedFoods().catch((err) => console.warn('Food database seed failed', err));
 void startSync().catch((err) => console.warn('Sync failed to start', err));
 
 createRoot(document.getElementById('root')!).render(

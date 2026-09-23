@@ -11,6 +11,8 @@ import { HistoryPage } from './features/workout/HistoryPage';
 import { ExerciseDetail, ExerciseLibrary } from './features/workout/ExerciseLibrary';
 import { GymMode } from './features/workout/gym/GymMode';
 import { NutritionPage } from './features/nutrition/NutritionPage';
+import { FoodEditor, FoodsPage } from './features/nutrition/FoodsPage';
+import { MealEditor, MealsPage } from './features/nutrition/MealsPage';
 import { OverviewPage } from './features/progress/OverviewPage';
 import { BodyPage } from './features/progress/BodyPage';
 import { GoalsPage } from './features/progress/GoalsPage';
@@ -60,6 +62,10 @@ export function App() {
             <Route path="/workout/exercises/:id" element={<ExerciseDetail profile={profile} />} />
             <Route path="/gym" element={<GymMode profile={profile} />} />
             <Route path="/nutrition" element={<NutritionPage profile={profile} />} />
+            <Route path="/nutrition/foods" element={<FoodsPage />} />
+            <Route path="/nutrition/foods/:id" element={<FoodEditor />} />
+            <Route path="/nutrition/meals" element={<MealsPage />} />
+            <Route path="/nutrition/meals/:id" element={<MealEditor />} />
             <Route path="/progress" element={<OverviewPage profile={profile} />} />
             <Route path="/progress/body" element={<BodyPage profile={profile} />} />
             <Route path="/progress/photos" element={<PhotosPage profile={profile} />} />
