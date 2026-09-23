@@ -11,7 +11,13 @@ import { HistoryPage } from './features/workout/HistoryPage';
 import { ExerciseDetail, ExerciseLibrary } from './features/workout/ExerciseLibrary';
 import { GymMode } from './features/workout/gym/GymMode';
 import { NutritionPage } from './features/nutrition/NutritionPage';
-import { ProgressPage } from './features/progress/ProgressPage';
+import { OverviewPage } from './features/progress/OverviewPage';
+import { BodyPage } from './features/progress/BodyPage';
+import { GoalsPage } from './features/progress/GoalsPage';
+import { TrainingAnalytics } from './features/progress/TrainingAnalytics';
+import { NutritionAnalytics } from './features/progress/NutritionAnalytics';
+import { PhotosPage } from './features/progress/photos/PhotosPage';
+import { ComparePage } from './features/progress/photos/ComparePage';
 import { MorePage } from './features/more/MorePage';
 import { ProfileSettings } from './features/more/ProfileSettings';
 import { TargetsSettings } from './features/more/TargetsSettings';
@@ -54,7 +60,13 @@ export function App() {
             <Route path="/workout/exercises/:id" element={<ExerciseDetail profile={profile} />} />
             <Route path="/gym" element={<GymMode profile={profile} />} />
             <Route path="/nutrition" element={<NutritionPage profile={profile} />} />
-            <Route path="/progress" element={<ProgressPage profile={profile} />} />
+            <Route path="/progress" element={<OverviewPage profile={profile} />} />
+            <Route path="/progress/body" element={<BodyPage profile={profile} />} />
+            <Route path="/progress/photos" element={<PhotosPage profile={profile} />} />
+            <Route path="/progress/photos/compare" element={<ComparePage profile={profile} />} />
+            <Route path="/progress/training" element={<TrainingAnalytics profile={profile} />} />
+            <Route path="/progress/nutrition" element={<NutritionAnalytics profile={profile} />} />
+            <Route path="/progress/goals" element={<GoalsPage profile={profile} />} />
             <Route path="/more" element={<MorePage profile={profile} />} />
             <Route path="/more/profile" element={<ProfileSettings profile={profile} />} />
             <Route path="/more/targets" element={<TargetsSettings profile={profile} />} />

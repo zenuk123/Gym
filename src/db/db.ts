@@ -1,5 +1,19 @@
 import Dexie, { type EntityTable } from 'dexie';
-import type { Exercise, FoodLog, MetaEntry, OutboxEntry, Profile, Routine, WaterLog, WeightEntry, Workout } from './types';
+import type {
+  Exercise,
+  FoodLog,
+  Measurement,
+  MetaEntry,
+  OutboxEntry,
+  PhotoFile,
+  Profile,
+  ProgressPhoto,
+  Routine,
+  WaterLog,
+  WeightEntry,
+  UserGoal,
+  Workout,
+} from './types';
 
 /**
  * On-device database (IndexedDB via Dexie). This is the source of truth for the UI —
@@ -15,6 +29,10 @@ export class FitnessDB extends Dexie {
   exercises!: EntityTable<Exercise, 'id'>;
   routines!: EntityTable<Routine, 'id'>;
   workouts!: EntityTable<Workout, 'id'>;
+  measurements!: EntityTable<Measurement, 'id'>;
+  goals!: EntityTable<UserGoal, 'id'>;
+  photos!: EntityTable<ProgressPhoto, 'id'>;
+  photoFiles!: EntityTable<PhotoFile, 'id'>;
   outbox!: EntityTable<OutboxEntry, 'key'>;
   meta!: EntityTable<MetaEntry, 'key'>;
 
@@ -33,6 +51,13 @@ export class FitnessDB extends Dexie {
       exercises: 'id, name, updatedAt',
       routines: 'id, sortOrder, updatedAt',
       workouts: 'id, date, startedAt, updatedAt',
+    });
+    // Phase 3: progress
+    this.version(3).stores({
+      measurements: 'id, date, updatedAt',
+      goals: 'id, updatedAt',
+      photos: 'id, date, updatedAt',
+      photoFiles: 'id, remote',
     });
   }
 }

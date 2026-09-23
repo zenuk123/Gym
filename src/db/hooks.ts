@@ -5,8 +5,11 @@ import {
   type Exercise,
   type FoodLog,
   type ISODate,
+  type Measurement,
   type Profile,
+  type ProgressPhoto,
   type Routine,
+  type UserGoal,
   type WaterLog,
   type WeightEntry,
   type Workout,
@@ -80,4 +83,29 @@ export function useWorkout(id: string | undefined): Workout | null | undefined {
     const w = await db.workouts.get(id);
     return w && alive(w) ? w : null;
   }, [id]);
+}
+
+/** Food logs between two dates (inclusive), for analytics. */
+export function useFoodLogsRange(from: ISODate, to: ISODate): FoodLog[] | undefined {
+  return useLiveQuery(async () => (await db.foodLogs.where('date').between(from, to, true, true).toArray()).filter(alive), [from, to]);
+}
+
+export function useWaterLogsRange(from: ISODate, to: ISODate): WaterLog[] | undefined {
+  return useLiveQuery(async () => (await db.waterLogs.where('date').between(from, to, true, true).toArray()).filter(alive), [from, to]);
+}
+
+// ── Progress ─────────────────────────────────────────────────────────────
+
+/** Measurement check-ins, oldest first. */
+export function useMeasurements(): Measurement[] | undefined {
+  return useLiveQuery(async () => (await db.measurements.orderBy('date').toArray()).filter(alive));
+}
+
+export function useGoals(): UserGoal[] | undefined {
+  return useLiveQuery(async () => (await db.goals.toArray()).filter(alive).sort((a, b) => a.createdAt - b.createdAt));
+}
+
+/** Progress photo metadata, newest first. */
+export function usePhotos(): ProgressPhoto[] | undefined {
+  return useLiveQuery(async () => (await db.photos.orderBy('date').reverse().toArray()).filter(alive));
 }

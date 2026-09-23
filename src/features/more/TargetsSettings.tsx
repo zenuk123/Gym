@@ -57,7 +57,7 @@ export function TargetsSettings({ profile }: { profile: Profile }) {
 
   return (
     <main className="page">
-      <SubHeader title="Goals & targets" />
+      <SubHeader title="Daily targets" />
 
       <section className="card">
         <div className="card-head" style={{ '--tone': 'var(--coach)' } as React.CSSProperties}>

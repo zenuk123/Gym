@@ -10,7 +10,13 @@ export interface RemoteAdapter {
   upsert(table: string, rows: RemoteRow[]): Promise<void>;
   /** Rows changed after `afterSeq`, ordered by `sync_seq`. */
   pullSince(table: string, afterSeq: number, limit: number): Promise<RemoteRow[]>;
+  /** Private file storage (progress photos). Paths are `<userId>/<file>`. */
+  uploadFile(path: string, blob: Blob): Promise<void>;
+  downloadFile(path: string): Promise<Blob | null>;
+  deleteFile(path: string): Promise<void>;
 }
+
+export const PHOTO_BUCKET = 'progress-photos';
 
 export interface CloudUser {
   id: string;
@@ -45,6 +51,19 @@ export function supabaseAdapter(client: SupabaseClient): RemoteAdapter {
         .limit(limit);
       if (error) throw new Error(error.message);
       return (data ?? []) as RemoteRow[];
+    },
+    async uploadFile(path, blob) {
+      const { error } = await client.storage.from(PHOTO_BUCKET).upload(path, blob, { upsert: true, contentType: blob.type || 'image/jpeg' });
+      if (error) throw new Error(error.message);
+    },
+    async downloadFile(path) {
+      const { data, error } = await client.storage.from(PHOTO_BUCKET).download(path);
+      if (error) return null;
+      return data;
+    },
+    async deleteFile(path) {
+      const { error } = await client.storage.from(PHOTO_BUCKET).remove([path]);
+      if (error) throw new Error(error.message);
     },
   };
 }

@@ -33,7 +33,7 @@ export function WeightCard({
 
   return (
     <section className="card">
-      <CardHead icon="scale" tone="var(--weight)" title="Body weight" link={{ to: '/progress', label: 'Trend' }} />
+      <CardHead icon="scale" tone="var(--weight)" title="Body weight" link={{ to: '/progress/body', label: 'Trend' }} />
       {summary.latest ? (
         <>
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>

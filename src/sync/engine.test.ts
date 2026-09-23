@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db, setMeta } from '../db/db';
 import { create, remove, update } from '../db/repo';
-import { claimDevice, syncOnce } from './engine';
+import { claimDevice, syncFiles, syncOnce } from './engine';
 import type { RemoteRow } from './mapping';
 import type { RemoteAdapter } from './remote';
 
@@ -32,6 +32,18 @@ class FakeServer implements RemoteAdapter {
       .filter((r) => (r.sync_seq as number) > after)
       .sort((a, b) => (a.sync_seq as number) - (b.sync_seq as number))
       .slice(0, limit);
+  }
+  files = new Map<string, Blob>();
+  async uploadFile(path: string, blob: Blob) {
+    if (this.offline) throw new TypeError('Failed to fetch');
+    this.files.set(path, blob);
+  }
+  async downloadFile(path: string) {
+    return this.files.get(path) ?? null;
+  }
+  async deleteFile(path: string) {
+    if (this.offline) throw new TypeError('Failed to fetch');
+    this.files.delete(path);
   }
   /** Simulate another device writing directly to the server. */
   write(table: string, row: RemoteRow) {
@@ -175,5 +187,27 @@ describe('claimDevice', () => {
     await db.outbox.clear();
     expect(await claimDevice(USER)).toBe('switched');
     expect(await db.weights.count()).toBe(0);
+  });
+});
+
+describe('photo files', () => {
+  it('uploads new photos, retries after failure, and deletes removed ones', async () => {
+    const server = new FakeServer();
+    await db.photoFiles.put({ id: 'p1', full: new Blob(['jpg']), thumb: null, remote: 'pending' });
+    server.offline = true;
+    const res = { pushed: 0, pulled: 0, failed: 0, errors: [] as string[] };
+    await syncFiles(server, USER, res);
+    expect(res.errors).toHaveLength(1);
+    expect((await db.photoFiles.get('p1'))!.remote).toBe('pending');
+
+    server.offline = false;
+    await syncOnce(server, USER);
+    expect(server.files.has(`${USER}/p1.jpg`)).toBe(true);
+    expect((await db.photoFiles.get('p1'))!.remote).toBe('uploaded');
+
+    await db.photoFiles.update('p1', { remote: 'delete', full: null });
+    await syncOnce(server, USER);
+    expect(server.files.size).toBe(0);
+    expect(await db.photoFiles.get('p1')).toBeUndefined();
   });
 });

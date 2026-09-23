@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { db, getMeta, setMeta } from '../db/db';
 import { cloudConfigured } from './config';
-import { claimDevice, syncOnce } from './engine';
+import { claimDevice, photoPath, syncOnce } from './engine';
 import { getClient, supabaseAdapter, type CloudUser } from './remote';
 import { onLocalChange } from './signal';
 import { seedExercises } from '../db/seed/exercises';
@@ -179,3 +179,17 @@ export async function signOut(): Promise<void> {
   await client.auth.signOut({ scope: 'local' });
   await setUser(null);
 }
+
+/** Fetch a photo file from private cloud storage (for photos taken on another device). */
+export async function downloadPhoto(photoId: string): Promise<Blob | null> {
+  const user = state.user;
+  if (!cloudConfigured || !user || !isOnline()) return null;
+  try {
+    const client = await getClient();
+    return await supabaseAdapter(client).downloadFile(photoPath(user.id, photoId));
+  } catch {
+    return null;
+  }
+}
+
+export const canDownloadPhotos = () => cloudConfigured && state.user !== null;

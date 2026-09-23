@@ -18,6 +18,7 @@ import { PBsCard } from './cards/PBsCard';
 import { WaterCard } from './cards/WaterCard';
 import { WeightCard } from './cards/WeightCard';
 import { WorkoutCard } from './cards/WorkoutCard';
+import { GoalsCard } from './cards/GoalsCard';
 import './today.css';
 
 /** The home screen: answers "what should I do today?" at a glance. */
@@ -63,6 +64,7 @@ export function TodayPage({ profile }: { profile: Profile }) {
       <NutritionCard profile={profile} intake={intake} date={today} />
       {weights && <WeightCard profile={profile} weights={weights} summary={summary} today={today} />}
       <WaterCard profile={profile} date={today} />
+      {t && <GoalsCard profile={profile} t={t} />}
       <CoachCard insights={insights} />
       <div className="today-pair">
         {t && <PBsCard profile={profile} t={t} today={today} />}

@@ -42,16 +42,16 @@ export function MorePage({ profile }: { profile: Profile }) {
           to="/more/targets"
           icon="target"
           tone="var(--kcal)"
-          title="Goals & targets"
+          title="Daily targets"
           desc={`${formatInt(profile.calorieTarget)} kcal · ${profile.proteinTarget} g protein`}
         />
+        <Row to="/progress/goals" icon="trophy" tone="var(--pb)" title="Goals" desc="Weight, strength & measurement goals" />
       </div>
 
       <h2 className="section-title">Coming soon</h2>
       <div className="list">
         {[
           { icon: 'brain' as const, title: 'AI coach', desc: 'Ask questions about your own training data' },
-          { icon: 'trophy' as const, title: 'Achievements', desc: 'PB history and milestones' },
           { icon: 'calendar' as const, title: 'Weekly review', desc: 'Your week in numbers, every Sunday' },
         ].map((c) => (
           <div key={c.title} className="list-row" style={{ '--tone': 'var(--text-3)', opacity: 0.7 } as React.CSSProperties}>

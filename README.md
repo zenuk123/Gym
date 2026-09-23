@@ -8,6 +8,27 @@ No Mac, Xcode or App Store needed: build from Windows, deploy from GitHub, test 
 
 ## Status
 
+### Phase 3 — Progress ✅
+- **Progress tab sections:** Overview · Body · Photos · Training · Nutrition · Goals.
+- **Goals:** body weight and weekly sessions (from your profile), plus your own **strength goals** (e.g. Bench Press
+  80 → 100 kg, heaviest weight or estimated 1RM) and **measurement goals** (e.g. waist 84 → 80 cm). Each shows
+  start → current → target, % progress, when it was achieved, and a **projected finish date** at your recent rate.
+  The projection is labelled as a calculation. The top goals also appear on Today.
+- **Body:** weight chart (drag to read values), 7-/30-day averages, rate, weekly **and monthly** averages.
+  **Body measurements** cover chest, waist, arms, thighs, shoulders, hips and neck in cm or inches, with how-to-measure
+  hints, change per site and a chart per site.
+- **Progress photos (private):** front/side/back check-ins on a timeline. Photos are resized on the phone and stored
+  inside the app, never in your camera roll. A **compare** view offers a drag slider or side by side, showing the
+  weeks between and the weight change. If you're signed in, photos upload to a **private per-user cloud folder**,
+  and other devices download them on demand. You can export photos via the share sheet.
+- **Training analytics:** workouts, sets, volume, PBs, average session length, sessions per week against your target,
+  weekly volume, working sets per muscle, and estimated-1RM trends for your main lifts. Ranges are 4 weeks to 1 year.
+- **Nutrition analytics:** average calories and protein against target, days logged, days on target, daily calorie
+  and protein charts, macro split and average water. Ranges are 7, 30 or 90 days.
+- **Overview:** the last 4 weeks against the previous 4, goals, and quick logging for weight, measurements and photos.
+- Charts follow one visual system: thin marks, clean axes, a colour palette checked for colour-blind safety, tap
+  or drag to read values, and a **Show data** table under the main charts.
+
 ### Phase 2 — Gym ✅
 - **Programmes & routines:** ready-made Push/Pull/Legs, Upper/Lower and Full Body templates, or build your own.
   Per exercise: sets, rep range, warm-up sets, rest time, supersets, reorder. Edits save instantly.
@@ -38,7 +59,7 @@ No Mac, Xcode or App Store needed: build from Windows, deploy from GitHub, test 
 - Data ownership: JSON backup/restore, CSV export, erase
 - Dark mode (default), light mode, kg/lb, cm/ft-in
 
-Next: **Phase 3 — Progress** (measurements, goals, progress photos, analytics).
+Next: **Phase 4 — Nutrition** (food database, custom foods, saved meals, meal history).
 
 ---
 
@@ -94,7 +115,8 @@ Without this the app runs in **on-device mode** — everything works, data just 
 
 1. Create a free project at <https://supabase.com>.
 2. **SQL Editor** → paste and run each file in [`supabase/migrations/`](supabase/migrations/) in order
-   (`0001_init.sql`, then `0002_training.sql`). When a new phase adds a migration, run just the new file.
+   (`0001_init.sql`, `0002_training.sql`, `0003_progress.sql`). When a new phase adds a migration, run just the new file.
+   `0003` also creates the private `progress-photos` storage bucket (owner-only access).
 3. **Project Settings → API**: copy the *Project URL* and the *anon public* key.
 4. Add them as environment variables where you build:
    - Vercel: **Project → Settings → Environment Variables** → `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, then redeploy.
@@ -136,7 +158,9 @@ src/
   lib/         dates, units, calc/ (nutrition, weight, training maths), insights (coach rules), backup (export/restore)
   pwa/         service-worker update prompt, install prompt, platform helpers
   components/  shared UI: BottomNav, Sheet, NumberField, LineChart, Toast, …
-  features/    onboarding/, today/, workout/ (hub, routines, library, history, gym/ = Gym Mode), nutrition/, progress/, more/
+  features/    onboarding/, today/, workout/ (hub, routines, library, history, gym/ = Gym Mode), nutrition/,
+               progress/ (overview, body, goals, analytics, photos/), more/
+  components/charts/  BarChart, MeterList, StackBar, ChartTable (+ components/LineChart)
   styles/      tokens.css (colours, dark/light), base, layout, components
 supabase/migrations/   cloud schema
 scripts/generate-icons.mjs   regenerates icons + iOS splash screens from public/icons/icon.svg
@@ -163,7 +187,7 @@ To regenerate icons after editing `public/icons/icon.svg`:
 
 1. **Foundation** — PWA, profile, targets, Today, offline + sync ✅
 2. **Gym** — exercise library, routines, Gym Mode, set logging (RPE, warm-up/drop/super sets), rest timer, PBs, progressive overload ✅
-3. **Progress** — measurements, goals, progress photos, analytics
+3. **Progress** — measurements, goals, progress photos, analytics ✅
 4. **Nutrition** — food database, custom foods, saved meals, meal history
 5. **Meal prep** — weekly planner, shopping lists, AI meal generator
 6. **AI coach** — questions over your own data, weekly review

@@ -92,11 +92,36 @@ export async function pull(adapter: RemoteAdapter, res: SyncResult): Promise<voi
   }
 }
 
+export const photoPath = (userId: string, photoId: string) => `${userId}/${photoId}.jpg`;
+
+/**
+ * Photo files travel separately from rows: upload new ones, delete removed ones.
+ * A failure leaves the file queued for the next pass (photos can be large and the
+ * gym's signal poor), and never blocks row sync.
+ */
+export async function syncFiles(adapter: RemoteAdapter, userId: string, res: SyncResult): Promise<void> {
+  for (const f of await db.photoFiles.where('remote').anyOf('pending', 'delete').toArray()) {
+    try {
+      if (f.remote === 'pending' && f.full) {
+        await adapter.uploadFile(photoPath(userId, f.id), f.full);
+        await db.photoFiles.update(f.id, { remote: 'uploaded' });
+      } else if (f.remote === 'delete') {
+        await adapter.deleteFile(photoPath(userId, f.id));
+        await db.photoFiles.delete(f.id);
+      }
+    } catch (err) {
+      res.errors.push(err instanceof Error ? err.message : String(err));
+      return;
+    }
+  }
+}
+
 /** One full sync pass. Pull errors throw; push errors are recorded per entry and reported. */
 export async function syncOnce(adapter: RemoteAdapter, userId: string, opts: { force?: boolean } = {}): Promise<SyncResult> {
   const res: SyncResult = { pushed: 0, pulled: 0, failed: 0, errors: [] };
   await push(adapter, userId, res, opts.force);
   await pull(adapter, res);
+  await syncFiles(adapter, userId, res);
   return res;
 }
 
@@ -121,14 +146,15 @@ export async function claimDevice(userId: string): Promise<'adopted' | 'same' | 
     }
     return 'adopted';
   }
-  if ((await db.outbox.count()) > 0) {
+  if ((await db.outbox.count()) > 0 || (await db.photoFiles.where('remote').equals('pending').count()) > 0) {
     throw new Error('This device has unsynced data from another account. Export or reset it in Data & backup first.');
   }
-  await db.transaction('rw', [...SYNC_TABLES.map((t) => db.table(t)), db.meta], async () => {
+  await db.transaction('rw', [...SYNC_TABLES.map((t) => db.table(t)), db.meta, db.photoFiles], async () => {
     for (const t of SYNC_TABLES) {
       await db.table(t).clear();
       await db.meta.delete(cursorKey(t));
     }
+    await db.photoFiles.clear();
     await db.meta.put({ key: 'ownerUserId', value: userId });
   });
   return 'switched';

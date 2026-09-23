@@ -4,6 +4,7 @@ import { SubHeader } from '../../components/PageHeader';
 import { useToast } from '../../components/Toast';
 import { createBackup, foodCSV, resetDevice, restoreBackup, saveFile, stampedName, waterCSV, weightsCSV, workoutsCSV } from '../../lib/backup';
 import { useSyncState } from '../../sync/manager';
+import { exportablePhotos } from '../progress/photos/photoStore';
 
 export function DataSettings() {
   const toast = useToast();
@@ -93,6 +94,29 @@ export function DataSettings() {
             </div>
           </button>
         ))}
+      </div>
+
+      <h2 className="section-title">Progress photos</h2>
+      <div className="list">
+        <button
+          className="list-row"
+          style={{ '--tone': 'var(--accent-text)' } as React.CSSProperties}
+          onClick={run(async () => {
+            const files = await exportablePhotos();
+            if (files.length === 0) throw new Error('No photos stored on this device.');
+            const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+            if (nav.canShare?.({ files })) await nav.share({ files, title: 'Progress photos' }).catch(() => {});
+            else throw new Error('Sharing several files isn’t supported in this browser — open a photo and save it individually.');
+          })}
+        >
+          <span className="lead">
+            <Icon name="share" />
+          </span>
+          <div className="grow">
+            <div className="title">Export photos</div>
+            <div className="desc">Save to Files or Photos via the share sheet (not in the JSON backup)</div>
+          </div>
+        </button>
       </div>
 
       {error && <p className="error-text">{error}</p>}

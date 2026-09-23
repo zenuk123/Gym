@@ -163,6 +163,70 @@ export interface Workout extends SyncFields {
   exercises: WorkoutExercise[];
 }
 
+// ── Progress (Phase 3) ───────────────────────────────────────────────────
+
+export const MEASUREMENT_SITES = ['chest', 'waist', 'arms', 'thighs', 'shoulders', 'hips', 'neck'] as const;
+export type MeasurementSite = (typeof MEASUREMENT_SITES)[number];
+
+/** One measuring session. Every site is optional; values in cm. */
+export interface Measurement extends SyncFields {
+  date: ISODate;
+  chestCm: number | null;
+  waistCm: number | null;
+  armsCm: number | null;
+  thighsCm: number | null;
+  shouldersCm: number | null;
+  hipsCm: number | null;
+  neckCm: number | null;
+  note: string | null;
+}
+
+export const siteKey = (site: MeasurementSite) => `${site}Cm` as `${MeasurementSite}Cm`;
+
+/**
+ * User goals beyond the profile's body-weight and weekly-training targets
+ * (those two live on the profile and are shown as goals automatically).
+ */
+export type GoalKind = 'lift' | 'measurement';
+export type LiftMetric = 'weight' | 'e1rm';
+
+export interface UserGoal extends SyncFields {
+  kind: GoalKind;
+  /** lift goals */
+  exerciseId: string | null;
+  metric: LiftMetric | null;
+  /** measurement goals */
+  site: MeasurementSite | null;
+  /** kg for lifts, cm for measurements */
+  startValue: number;
+  targetValue: number;
+  startDate: ISODate;
+  targetDate: ISODate | null;
+  archived: boolean;
+}
+
+export type PhotoPose = 'front' | 'side' | 'back';
+
+/** Metadata for a progress photo. The image itself lives in `photoFiles` (and cloud storage). */
+export interface ProgressPhoto extends SyncFields {
+  date: ISODate;
+  pose: PhotoPose;
+  width: number;
+  height: number;
+  note: string | null;
+}
+
+/**
+ * Local-only image store (never synced as rows). `remote` tracks the upload to
+ * private cloud storage: pending → uploaded, or `delete` once the photo is removed.
+ */
+export interface PhotoFile {
+  id: string;
+  full: Blob | null;
+  thumb: Blob | null;
+  remote: 'pending' | 'uploaded' | 'delete' | 'none';
+}
+
 /** Local table name → record type, for every table that syncs. */
 export interface SyncTableMap {
   profile: Profile;
@@ -172,6 +236,9 @@ export interface SyncTableMap {
   exercises: Exercise;
   routines: Routine;
   workouts: Workout;
+  measurements: Measurement;
+  goals: UserGoal;
+  photos: ProgressPhoto;
 }
 export type SyncTable = keyof SyncTableMap;
 
@@ -184,6 +251,9 @@ export const REMOTE_TABLES: Record<SyncTable, string> = {
   exercises: 'exercises',
   routines: 'routines',
   workouts: 'workouts',
+  measurements: 'measurements',
+  goals: 'goals',
+  photos: 'progress_photos',
 };
 
 export const SYNC_TABLES = Object.keys(REMOTE_TABLES) as SyncTable[];

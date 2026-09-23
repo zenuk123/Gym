@@ -33,6 +33,16 @@ The owner has **no Mac** — never introduce Xcode, Swift or Mac-only tooling. N
 - Progression suggestions only pre-fill today's sets — never modify a routine automatically.
 - `useTraining()` derives everything (history, PBs, active workout) from live queries; reuse it instead of re-querying.
 
+## Progress (Phase 3)
+- Goal maths: `lib/calc/goals.ts` (profile goals are derived, user goals live in the `goals` table).
+  Analytics: `lib/calc/analytics.ts`. Measurements: `lib/calc/measurements.ts`. All pure + tested.
+- Progress photos: metadata syncs as rows (`photos`); image blobs live in the local-only `photoFiles` table
+  and go to Supabase Storage via `syncFiles` in `sync/engine.ts`. Use `features/progress/photos/photoStore.ts`
+  (`addPhoto`, `deletePhoto`, `usePhotoUrl`) — never write blobs elsewhere, never into the camera roll.
+- Charts: `components/LineChart.tsx` and `components/charts/*`. Follow the dataviz rules: one hue per single
+  series, 2px lines, hairline solid grids, dashed only for targets, selective labels, tooltips + `ChartTable`.
+  Categorical colours must be validated (macro colours already are).
+
 ## UI conventions
 - Design for a 375–440 px wide iPhone first. Touch targets ≥ 44 px, inputs ≥ 16 px font (prevents iOS zoom).
 - Respect safe areas (`--safe-top`, `--safe-bottom`). Bottom nav is fixed; pages pad for it.

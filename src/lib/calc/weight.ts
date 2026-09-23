@@ -87,3 +87,12 @@ export function summariseWeight(
   }
   return { latest, average7, rate, startKg, changeKg, targetKg, remainingKg, progress };
 }
+
+/** Calendar-month averages (YYYY-MM), newest first. */
+export function monthlyAverages(series: DailyWeight[]): { month: string; avg: number; n: number }[] {
+  const months = new Map<string, number[]>();
+  for (const d of series) months.set(d.date.slice(0, 7), [...(months.get(d.date.slice(0, 7)) ?? []), d.weightKg]);
+  return [...months.entries()]
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([month, ws]) => ({ month, avg: ws.reduce((s, w) => s + w, 0) / ws.length, n: ws.length }));
+}

@@ -18,9 +18,10 @@
   --accent-text: #c6f432;
 
   --kcal: #ff9f43;
-  --protein: #4dabf7;
-  --carbs: #ffd43b;
-  --fat: #e599f7;
+  /* Macro colours = validated categorical steps (blue · yellow · violet), dark surface */
+  --protein: #3987e5;
+  --carbs: #c98500;
+  --fat: #9085e9;
   --water: #22d3ee;
   --weight: #a78bfa;
   --pb: #fcc419;
@@ -63,9 +64,9 @@
     --accent-soft: rgba(120, 170, 0, 0.14);
     --accent-text: #4d7c0f;
     --kcal: #f76707;
-    --protein: #1c7ed6;
-    --carbs: #e8a200;
-    --fat: #ae3ec9;
+    --protein: #2a78d6;
+    --carbs: #eda100;
+    --fat: #4a3aa7;
     --water: #0c8599;
     --weight: #7048e8;
     --pb: #e67700;
@@ -88,9 +89,9 @@
   --accent-soft: rgba(120, 170, 0, 0.14);
   --accent-text: #4d7c0f;
   --kcal: #f76707;
-  --protein: #1c7ed6;
-  --carbs: #e8a200;
-  --fat: #ae3ec9;
+  --protein: #2a78d6;
+  --carbs: #eda100;
+  --fat: #4a3aa7;
   --water: #0c8599;
   --weight: #7048e8;
   --pb: #e67700;
