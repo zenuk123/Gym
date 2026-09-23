@@ -1,0 +1,99 @@
+.card.group-head {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+.card.group-head .grow {
+  flex: 1;
+  min-width: 0;
+}
+.code {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  letter-spacing: 0.08em;
+  color: var(--text);
+}
+.code-input {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+.board {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.board-row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+}
+.board-row + .board-row {
+  border-top: 1px solid var(--border);
+}
+.board-row.me {
+  background: var(--accent-soft);
+  border-top-color: transparent;
+}
+.board-row .rank {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--text-2);
+  background: var(--surface-2);
+  font-variant-numeric: tabular-nums;
+}
+.board-row .rank.top1 {
+  background: color-mix(in srgb, var(--pb) 22%, transparent);
+  color: var(--pb);
+}
+.board-row .rank.top2,
+.board-row .rank.top3 {
+  color: var(--text);
+}
+.board-row .who {
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: flex;
+  flex-direction: column;
+}
+.board-row .who .desc {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-3);
+}
+.board-row .val {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.feed-row {
+  align-items: flex-start;
+}
+.feed-icon {
+  font-size: 20px;
+  line-height: 1.4;
+  flex: none;
+  width: 28px;
+  text-align: center;
+}
+
+.board-refresh {
+  margin-left: auto;
+  color: var(--text-2);
+}
+.board-row .who .name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

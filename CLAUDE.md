@@ -63,6 +63,15 @@ The owner has **no Mac** — never introduce Xcode, Swift or Mac-only tooling. N
 - Native wrapper, live HealthKit / Health Connect and wearables are future work (README §5): Capacitor + cloud
   macOS builds, never local Xcode.
 
+## Friends
+- Social data lives only in Supabase (`0007_friends.sql`), not in Dexie sync tables. Group reads are gated by RLS
+  (`fos_shares_group`); creating/joining/leaving only via the `fos_*` RPCs.
+- Users share a **summary** built on-device (`features/friends/stats.ts → buildStats/buildEvents`) filtered by their
+  per-category toggles. Never publish raw logs, and never absolute body weight (percentages only).
+- `features/friends/api.ts → publishIfEnabled` runs after every successful sync (registered in `main.tsx` via
+  `onSynced`), only when the account is in a group; the last board is cached in `meta` for offline display.
+- `db/localData.ts → loadLocalData()` is the shared read-everything helper (coach tools + friends).
+
 ## UI conventions
 - Design for a 375–440 px wide iPhone first. Touch targets ≥ 44 px, inputs ≥ 16 px font (prevents iOS zoom).
 - Respect safe areas (`--safe-top`, `--safe-bottom`). Bottom nav is fixed; pages pad for it.

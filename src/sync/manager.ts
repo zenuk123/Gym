@@ -49,6 +49,17 @@ export function useSyncState(): SyncState {
 
 const isOnline = () => (typeof navigator === 'undefined' ? true : navigator.onLine);
 
+const syncedListeners = new Set<(userId: string) => void>();
+
+/** Run something after every successful sync (e.g. publishing the friends summary). */
+export function onSynced(fn: (userId: string) => void): () => void {
+  syncedListeners.add(fn);
+  return () => syncedListeners.delete(fn);
+}
+
+/** The signed-in user's id, or null. */
+export const currentUserId = () => state.user?.id ?? null;
+
 let running: Promise<void> | null = null;
 let rerun = false;
 
@@ -84,6 +95,7 @@ async function runSync(force: boolean) {
     const res = await syncOnce(supabaseAdapter(client), user.id, { force });
     const now = Date.now();
     await setMeta('lastSyncedAt', now);
+    if (!res.errors.length) syncedListeners.forEach((fn) => fn(user.id));
     setState({
       status: res.errors.length ? 'error' : 'idle',
       lastSyncedAt: now,

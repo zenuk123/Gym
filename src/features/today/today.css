@@ -143,3 +143,32 @@
   flex-wrap: wrap;
   min-height: 44px;
 }
+
+.mini-board {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.mini-board li {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  font-size: 15px;
+}
+.mini-board .rank {
+  color: var(--text-3);
+  font-weight: 700;
+}
+.mini-board .who {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mini-board li.me .who {
+  color: var(--accent-text);
+  font-weight: 700;
+}

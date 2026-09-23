@@ -8,6 +8,19 @@ No Mac, Xcode or App Store needed: build from Windows, deploy from GitHub, test 
 
 ## Status
 
+### Friends & leaderboard ✅
+- **Groups** (*More → Friends*): start a group and tap **Invite** to send a link (or a 6-character code) to
+  friends. Up to 50 people per group, and you can be in up to 10 groups. Leaving a group, or
+  getting a new invite code, is one tap.
+- **Leaderboard**, reset every Monday: habit score, workouts (against each person's *own* target, so 3/3 beats 4/6),
+  streak, PBs this week, weight-goal progress %, and days on calorie target.
+- **Activity feed:** friends' PBs (shown in *your* units), goals reached, weekly targets hit and streak milestones.
+  **Today** shows your place in your group.
+- **You choose what's shared**, per category. Only small summaries computed on your phone are uploaded — never your food log,
+  weigh-ins, measurements, photos or sleep. **Weight is only ever shared as a percentage**, never kilograms.
+  Leaving your last group deletes everything you shared.
+- Needs cloud accounts (§3): every friend creates their own account in the same app. Run migration `0007_friends.sql`.
+
 ### Phase 7 — Integrations (PWA-friendly parts) ✅
 - **Barcode scanner** (Nutrition → Add → scan): uses the camera with the built-in `BarcodeDetector` where available
   and a bundled decoder otherwise, looks the product up on Open Food Facts, and lets you type the number when offline.
@@ -175,7 +188,7 @@ Without this the app runs in **on-device mode** — everything works, data just 
 
 1. Create a free project at <https://supabase.com>.
 2. **SQL Editor** → paste and run each file in [`supabase/migrations/`](supabase/migrations/) in order
-   (`0001_init.sql` … `0006_sleep.sql`). When a new phase adds a migration, run just the new file.
+   (`0001_init.sql` … `0007_friends.sql`). When a new phase adds a migration, run just the new file.
    `0003` also creates the private `progress-photos` storage bucket (owner-only access).
 3. **Project Settings → API**: copy the *Project URL* and the *anon public* key.
 4. Add them as environment variables where you build:
@@ -185,6 +198,10 @@ Without this the app runs in **on-device mode** — everything works, data just 
 5. (Optional) **Authentication → Providers → Email**: turn off "Confirm email" if you want to sign in immediately after sign-up.
 
 Then *More → Account & sync → Create account*. Anything already on the phone is uploaded on first sign-in.
+
+**Sharing with friends:** send them the app link; each person installs it and creates their own account in the
+same app (so you all use one Supabase project). Then one of you creates a group under *More → Friends* and taps
+**Invite**. Your data stays private — friends only see the summaries each person chooses to share.
 The anon key is safe to ship in the app: Row Level Security restricts every row to its owner.
 
 ## 4. Optional: AI coach without a key on the phone (Supabase Edge Function)
@@ -261,7 +278,7 @@ src/
   components/  shared UI: BottomNav, Sheet, NumberField, LineChart, Toast, …
   features/    onboarding/, today/, workout/ (hub, routines, library, history, gym/ = Gym Mode), nutrition/,
                progress/ (overview, body, goals, analytics, photos/, sleep/), review/ (weekly review),
-               coach/ (AI coach chat, read-only data tools, meal ideas, AI settings), more/
+               coach/ (AI coach chat, read-only data tools, meal ideas, AI settings), friends/ (groups, leaderboard), more/
   components/charts/  BarChart, MeterList, StackBar, ChartTable (+ components/LineChart)
   styles/      tokens.css (colours, dark/light), base, layout, components
 supabase/migrations/   cloud schema

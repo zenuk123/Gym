@@ -1,5 +1,6 @@
 import { db } from '../../db/db';
-import { PROFILE_ID, type Exercise, type ISODate, type Profile } from '../../db/types';
+import { loadLocalData } from '../../db/localData';
+import type { Exercise, ISODate } from '../../db/types';
 import { nutritionSummary, trainingSummary } from '../../lib/calc/analytics';
 import { mealPerServing, searchFoods } from '../../lib/calc/food';
 import { bodyweightGoal, evaluateGoal, frequencyGoal } from '../../lib/calc/goals';
@@ -7,7 +8,7 @@ import { SITE_LABEL, summariseMeasurements } from '../../lib/calc/measurements';
 import { dayTotals } from '../../lib/calc/plan';
 import { reviewText, weeklyReview } from '../../lib/calc/review';
 import { sleepVsTraining, summariseSleep } from '../../lib/calc/sleep';
-import { buildHistory, detectPBs, nextRoutine, suggestNext, weekStreak } from '../../lib/calc/training';
+import { nextRoutine, suggestNext, weekStreak } from '../../lib/calc/training';
 import { summariseWeight } from '../../lib/calc/weight';
 import { addDays, daysBetween, startOfWeek, todayISO } from '../../lib/dates';
 import { formatWeight } from '../../lib/units';
@@ -38,40 +39,7 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const days = (max = 730): Prop => ({ type: 'integer', description: `How many days back from today (1–${max}).`, min: 1, max, optional: true });
 const r1 = (n: number | null | undefined) => (n == null ? null : Math.round(n * 10) / 10);
 const alive = <T extends { deletedAt: number | null }>(xs: T[]) => xs.filter((x) => x.deletedAt === null);
-
-async function load() {
-  const [profile, weights, workouts, exercises, routines, foodLogs, water, sleep, goals, measurements] = await Promise.all([
-    db.profile.get(PROFILE_ID),
-    db.weights.orderBy('date').toArray(),
-    db.workouts.orderBy('startedAt').toArray(),
-    db.exercises.toArray(),
-    db.routines.toArray(),
-    db.foodLogs.toArray(),
-    db.waterLogs.toArray(),
-    db.sleep.orderBy('date').toArray(),
-    db.goals.toArray(),
-    db.measurements.orderBy('date').toArray(),
-  ]);
-  if (!profile) throw new Error('No profile yet');
-  const finished = alive(workouts).filter((w) => w.endedAt !== null);
-  const exMap = new Map<string, Exercise>(exercises.map((e) => [e.id, e]));
-  const history = buildHistory(finished);
-  return {
-    profile: profile as Profile,
-    weights: alive(weights),
-    finished,
-    exMap,
-    routines: alive(routines).sort((a, b) => a.sortOrder - b.sortOrder),
-    history,
-    pbs: detectPBs(history, exMap),
-    foodLogs: alive(foodLogs),
-    water: alive(water),
-    sleep: alive(sleep),
-    goals: alive(goals).filter((g) => !g.archived),
-    measurements: alive(measurements),
-    today: todayISO(),
-  };
-}
+const load = loadLocalData;
 
 const exName = (exMap: Map<string, Exercise>, id: string) => exMap.get(id)?.name ?? 'Unknown exercise';
 

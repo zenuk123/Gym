@@ -15,6 +15,7 @@ import { CoachCard } from './cards/CoachCard';
 import { ConsistencyCard } from './cards/ConsistencyCard';
 import { NutritionCard } from './cards/NutritionCard';
 import { PBsCard } from './cards/PBsCard';
+import { FriendsCard } from './cards/FriendsCard';
 import { ReviewCard } from './cards/ReviewCard';
 import { SleepCard } from './cards/SleepCard';
 import { WaterCard } from './cards/WaterCard';
@@ -70,6 +71,7 @@ export function TodayPage({ profile }: { profile: Profile }) {
       <SleepCard today={today} />
       {t && <GoalsCard profile={profile} t={t} />}
       <CoachCard insights={insights} />
+      <FriendsCard today={today} />
       <div className="today-pair">
         {t && <PBsCard profile={profile} t={t} today={today} />}
         {t && <ConsistencyCard profile={profile} t={t} today={today} />}

@@ -46,6 +46,7 @@ export function MorePage({ profile }: { profile: Profile }) {
           desc={`${formatInt(profile.calorieTarget)} kcal · ${profile.proteinTarget} g protein`}
         />
         <Row to="/progress/goals" icon="trophy" tone="var(--pb)" title="Goals" desc="Weight, strength & measurement goals" />
+        <Row to="/more/friends" icon="user" tone="var(--streak)" title="Friends" desc="Groups, leaderboard & shared progress" />
       </div>
 
       <h2 className="section-title">Coach</h2>
