@@ -284,6 +284,42 @@ export interface PhotoFile {
   remote: 'pending' | 'uploaded' | 'delete' | 'none';
 }
 
+// ── Meal prep (Phase 5) ──────────────────────────────────────────────────
+
+/** A planned meal on a day. Nutrition + ingredient lines are stored for the planned portion. */
+export interface PlanItem extends SyncFields {
+  date: ISODate;
+  slot: MealSlot;
+  kind: 'food' | 'meal' | 'custom';
+  foodId: string | null;
+  mealId: string | null;
+  name: string;
+  amountG: number | null;
+  servings: number | null;
+  kcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  fibreG: number | null;
+  /** Ingredients for this portion — what the shopping list adds up. */
+  items: MealItem[];
+  /** Food-log entry created when it was eaten. */
+  loggedId: string | null;
+}
+
+export interface ShoppingItem extends SyncFields {
+  /** Monday of the plan week this list belongs to. */
+  weekStart: ISODate;
+  name: string;
+  category: FoodCategory;
+  /** Human quantity, e.g. "600 g (≈ 4 × 1 breast)". */
+  quantity: string | null;
+  amountG: number | null;
+  foodId: string | null;
+  checked: boolean;
+  source: 'plan' | 'manual';
+}
+
 /** Local table name → record type, for every table that syncs. */
 export interface SyncTableMap {
   profile: Profile;
@@ -298,6 +334,8 @@ export interface SyncTableMap {
   photos: ProgressPhoto;
   foods: Food;
   meals: SavedMeal;
+  planItems: PlanItem;
+  shopping: ShoppingItem;
 }
 export type SyncTable = keyof SyncTableMap;
 
@@ -315,6 +353,8 @@ export const REMOTE_TABLES: Record<SyncTable, string> = {
   photos: 'progress_photos',
   foods: 'foods',
   meals: 'saved_meals',
+  planItems: 'plan_items',
+  shopping: 'shopping_items',
 };
 
 export const SYNC_TABLES = Object.keys(REMOTE_TABLES) as SyncTable[];

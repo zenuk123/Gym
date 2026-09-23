@@ -2,6 +2,8 @@ import { NavLink } from 'react-router-dom';
 
 const TABS = [
   { to: '/nutrition', label: 'Log', end: true },
+  { to: '/nutrition/plan', label: 'Plan' },
+  { to: '/nutrition/shopping', label: 'Shopping' },
   { to: '/nutrition/meals', label: 'Meals' },
   { to: '/nutrition/foods', label: 'Foods' },
 ];

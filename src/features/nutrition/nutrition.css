@@ -131,3 +131,124 @@
 .barcode-manual .input-wrap {
   flex: 1;
 }
+
+/* Planner */
+.plan-day {
+  gap: 8px;
+  padding: 12px 14px;
+}
+.plan-day.today {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+.plan-day-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.plan-day-sum {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.plan-slot {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+.plan-slot-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-top: 9px;
+}
+.plan-slot-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.plan-item {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  border-radius: 10px;
+  min-height: 36px;
+  padding: 4px 10px;
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  max-width: 100%;
+  font-size: 14px;
+  font-weight: 600;
+}
+.plan-item .name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.plan-item .kcal {
+  color: var(--text-3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.plan-item.eaten {
+  border-color: color-mix(in srgb, var(--success) 50%, transparent);
+  background: color-mix(in srgb, var(--success) 12%, var(--surface-2));
+}
+.plan-add {
+  appearance: none;
+  border: 1.5px dashed var(--border);
+  background: transparent;
+  color: var(--text-3);
+  border-radius: 10px;
+  width: 40px;
+  min-height: 36px;
+  display: grid;
+  place-items: center;
+}
+.chip-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ingredient-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 14px;
+  display: grid;
+  gap: 2px;
+}
+
+/* Shopping */
+.shop-row.done .title {
+  text-decoration: line-through;
+  color: var(--text-3);
+}
+.shop-check {
+  appearance: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  border: 2px solid var(--text-3);
+  background: transparent;
+  color: transparent;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+.shop-check svg {
+  width: 18px;
+  height: 18px;
+}
+.shop-check.on {
+  background: var(--success);
+  border-color: var(--success);
+  color: #fff;
+}

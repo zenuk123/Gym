@@ -8,9 +8,11 @@ import {
   type ISODate,
   type Measurement,
   type Profile,
+  type PlanItem,
   type ProgressPhoto,
   type Routine,
   type SavedMeal,
+  type ShoppingItem,
   type UserGoal,
   type WaterLog,
   type WeightEntry,
@@ -131,4 +133,14 @@ export function useRecentFoodLogs(days = 60): FoodLog[] | undefined {
     const from = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     return (await db.foodLogs.where('date').aboveOrEqual(from).toArray()).filter(alive);
   }, [days]);
+}
+
+// ── Meal prep ────────────────────────────────────────────────────────────
+
+export function usePlanItems(from: ISODate, to: ISODate): PlanItem[] | undefined {
+  return useLiveQuery(async () => (await db.planItems.where('date').between(from, to, true, true).toArray()).filter(alive).sort((a, b) => a.createdAt - b.createdAt), [from, to]);
+}
+
+export function useShopping(weekStart: ISODate): ShoppingItem[] | undefined {
+  return useLiveQuery(async () => (await db.shopping.where('weekStart').equals(weekStart).toArray()).filter(alive).sort((a, b) => a.createdAt - b.createdAt), [weekStart]);
 }

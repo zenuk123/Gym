@@ -8,6 +8,18 @@ No Mac, Xcode or App Store needed: build from Windows, deploy from GitHub, test 
 
 ## Status
 
+### Phase 5 — Meal prep ✅
+- **Weekly meal planner:** Monday → Sunday × breakfast / lunch / dinner / snack. Each day shows its calories and protein
+  against target, and the week shows averages. Plan any food or saved meal. You can copy an item to other days,
+  move it between meals, "Copy last week", or clear the week.
+- **Meal prep:** pick a recipe (set "Makes N servings") and spread the portions over the next days in one tap.
+- **"Mark as eaten"** logs a planned meal. Today shows what's planned and has an **Eaten** button.
+- **Shopping list:** built automatically from the week's plan. It adds up every ingredient
+  (e.g. "600 g (≈ 4 × 1 breast)") and groups items by aisle: meat & fish, dairy & eggs, fruit, vegetables,
+  carbohydrates, snacks, other. There are big checkboxes, your own extra items, rebuilding keeps your ticks,
+  and you can **share** the list as text.
+- **AI meal ideas** come from the AI coach (Phase 6).
+
 ### Phase 4 — Nutrition ✅
 - **Food database:** about 100 common foods built in (per-100 g values, works offline), plus **your own foods**
   (per 100 g or per serving, with a serving size). You can star favourites.
@@ -72,7 +84,7 @@ No Mac, Xcode or App Store needed: build from Windows, deploy from GitHub, test 
 - Data ownership: JSON backup/restore, CSV export, erase
 - Dark mode (default), light mode, kg/lb, cm/ft-in
 
-Next: **Phase 5 — Meal prep** (weekly planner, shopping list, AI meal ideas).
+Next: **Phase 6 — AI coach** (questions about your data, AI meal generator, weekly review).
 
 ---
 
@@ -128,7 +140,7 @@ Without this the app runs in **on-device mode** — everything works, data just 
 
 1. Create a free project at <https://supabase.com>.
 2. **SQL Editor** → paste and run each file in [`supabase/migrations/`](supabase/migrations/) in order
-   (`0001_init.sql` … `0004_nutrition.sql`). When a new phase adds a migration, run just the new file.
+   (`0001_init.sql` … `0005_meal_prep.sql`). When a new phase adds a migration, run just the new file.
    `0003` also creates the private `progress-photos` storage bucket (owner-only access).
 3. **Project Settings → API**: copy the *Project URL* and the *anon public* key.
 4. Add them as environment variables where you build:
@@ -202,6 +214,6 @@ To regenerate icons after editing `public/icons/icon.svg`:
 2. **Gym** — exercise library, routines, Gym Mode, set logging (RPE, warm-up/drop/super sets), rest timer, PBs, progressive overload ✅
 3. **Progress** — measurements, goals, progress photos, analytics ✅
 4. **Nutrition** — food database, custom foods, saved meals ✅, meal history
-5. **Meal prep** — weekly planner, shopping lists, AI meal generator
+5. **Meal prep** — weekly planner, shopping lists, AI meal generator ✅
 6. **AI coach** — questions over your own data, weekly review
 7. **Integrations** — Apple Health, barcode scanner, wearables, native iOS wrapper (only once the PWA is stable)
