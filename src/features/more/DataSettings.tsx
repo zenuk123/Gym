@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { Icon } from '../../components/Icon';
 import { SubHeader } from '../../components/PageHeader';
 import { useToast } from '../../components/Toast';
-import { createBackup, foodCSV, resetDevice, restoreBackup, saveFile, stampedName, waterCSV, weightsCSV } from '../../lib/backup';
+import { createBackup, foodCSV, resetDevice, restoreBackup, saveFile, stampedName, waterCSV, weightsCSV, workoutsCSV } from '../../lib/backup';
 import { useSyncState } from '../../sync/manager';
 
 export function DataSettings() {
@@ -74,6 +74,7 @@ export function DataSettings() {
       <h2 className="section-title">Spreadsheet (CSV)</h2>
       <div className="list">
         {[
+          { title: 'Workouts (one row per set)', name: 'workouts', get: workoutsCSV },
           { title: 'Body weight', name: 'weights', get: weightsCSV },
           { title: 'Food log', name: 'food-log', get: foodCSV },
           { title: 'Water (daily totals)', name: 'water', get: waterCSV },

@@ -113,7 +113,8 @@ export async function claimDevice(userId: string): Promise<'adopted' | 'same' | 
     await setMeta('ownerUserId', userId);
     const now = Date.now();
     for (const table of SYNC_TABLES) {
-      const ids = (await db.table(table).toCollection().primaryKeys()) as string[];
+      // Skip untouched built-ins (updatedAt 0): every device seeds those itself.
+      const ids = (await db.table(table).filter((r: { updatedAt: number }) => r.updatedAt > 0).primaryKeys()) as string[];
       await db.transaction('rw', db.outbox, async () => {
         for (const id of ids) await enqueue(table, id, now);
       });

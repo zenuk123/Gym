@@ -67,12 +67,111 @@ export interface WaterLog extends SyncFields {
   ml: number;
 }
 
+// ── Training ─────────────────────────────────────────────────────────────
+
+export type MuscleGroup =
+  | 'chest'
+  | 'back'
+  | 'shoulders'
+  | 'biceps'
+  | 'triceps'
+  | 'quads'
+  | 'hamstrings'
+  | 'glutes'
+  | 'calves'
+  | 'core'
+  | 'full_body';
+
+export type Equipment = 'barbell' | 'dumbbell' | 'machine' | 'cable' | 'bodyweight' | 'kettlebell' | 'other';
+
+export interface Exercise extends SyncFields {
+  name: string;
+  muscle: MuscleGroup;
+  equipment: Equipment;
+  /** Bodyweight exercises log reps; weight is optional added load. */
+  bodyweight: boolean;
+  /** Smallest sensible jump in load, used by progression suggestions. */
+  incrementKg: number;
+  /** Built-in library entry (seeded locally, id is stable across devices). */
+  builtIn: boolean;
+  /** Hidden from pickers but kept because history references it. */
+  archived: boolean;
+  notes: string | null;
+}
+
+export interface RoutineExercise {
+  /** Stable key within the routine. */
+  key: string;
+  exerciseId: string;
+  sets: number;
+  warmupSets: number;
+  repMin: number;
+  repMax: number;
+  restSec: number;
+  /** Exercises sharing a group id are performed as a superset. */
+  supersetGroup: string | null;
+}
+
+export interface Routine extends SyncFields {
+  name: string;
+  notes: string | null;
+  /** Position in the rotation (Today suggests the next routine after the last one done). */
+  sortOrder: number;
+  exercises: RoutineExercise[];
+}
+
+export type SetKind = 'warmup' | 'normal' | 'drop' | 'failure';
+
+export interface WorkoutSet {
+  id: string;
+  kind: SetKind;
+  weightKg: number;
+  reps: number;
+  rpe: number | null;
+  done: boolean;
+  completedAt: number | null;
+}
+
+export interface WorkoutTarget {
+  weightKg: number;
+  repMin: number;
+  repMax: number;
+}
+
+export interface WorkoutExercise {
+  id: string;
+  exerciseId: string;
+  supersetGroup: string | null;
+  restSec: number;
+  repMin: number;
+  repMax: number;
+  /** Suggested target when the workout started (shown, never forced). */
+  target: WorkoutTarget | null;
+  notes: string | null;
+  sets: WorkoutSet[];
+}
+
+/** One gym session. Sets are embedded so a whole workout saves (and syncs) atomically. */
+export interface Workout extends SyncFields {
+  routineId: string | null;
+  name: string;
+  date: ISODate;
+  startedAt: number;
+  /** null while the workout is in progress. */
+  endedAt: number | null;
+  notes: string | null;
+  exercises: WorkoutExercise[];
+}
+
 /** Local table name → record type, for every table that syncs. */
 export interface SyncTableMap {
   profile: Profile;
   weights: WeightEntry;
   foodLogs: FoodLog;
   waterLogs: WaterLog;
+  exercises: Exercise;
+  routines: Routine;
+  workouts: Workout;
 }
 export type SyncTable = keyof SyncTableMap;
 
@@ -82,6 +181,9 @@ export const REMOTE_TABLES: Record<SyncTable, string> = {
   weights: 'weight_entries',
   foodLogs: 'food_logs',
   waterLogs: 'water_logs',
+  exercises: 'exercises',
+  routines: 'routines',
+  workouts: 'workouts',
 };
 
 export const SYNC_TABLES = Object.keys(REMOTE_TABLES) as SyncTable[];

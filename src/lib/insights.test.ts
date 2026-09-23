@@ -39,4 +39,17 @@ describe('coach insights', () => {
     const [top] = generateInsights({ profile, weight: empty, recentWeighIns: 0, intake: { kcal: 0, proteinG: 0 }, hour: 9 });
     expect(top.id).toBe('log-weight');
   });
+
+  it('nudges after a training gap and names the next routine', () => {
+    const ins = generateInsights({
+      profile,
+      weight: weight(0.3),
+      recentWeighIns: 12,
+      intake: { kcal: 0, proteinG: 0 },
+      hour: 9,
+      training: { daysSinceLast: 5, pbsThisWeek: 0, nextRoutine: 'Pull', active: false },
+    });
+    expect(ins[0]).toMatchObject({ id: 'train-gap', kind: 'fact' });
+    expect(ins[0].text).toContain('Next up: Pull');
+  });
 });

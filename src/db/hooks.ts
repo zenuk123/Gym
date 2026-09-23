@@ -1,6 +1,16 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from './db';
-import { PROFILE_ID, type FoodLog, type ISODate, type Profile, type WaterLog, type WeightEntry } from './types';
+import {
+  PROFILE_ID,
+  type Exercise,
+  type FoodLog,
+  type ISODate,
+  type Profile,
+  type Routine,
+  type WaterLog,
+  type WeightEntry,
+  type Workout,
+} from './types';
 
 // Live queries: components re-render automatically whenever the underlying
 // IndexedDB data changes (local edits or records pulled from the cloud).
@@ -38,4 +48,36 @@ export function useWaterLogs(date: ISODate): WaterLog[] | undefined {
 
 export function usePendingSyncCount(): number | undefined {
   return useLiveQuery(() => db.outbox.count());
+}
+
+// ── Training ─────────────────────────────────────────────────────────────
+
+/** All exercises incl. archived (history needs them); sorted by name. */
+export function useExercises(): Exercise[] | undefined {
+  return useLiveQuery(async () => (await db.exercises.toArray()).filter(alive).sort((a, b) => a.name.localeCompare(b.name)));
+}
+
+export function useRoutines(): Routine[] | undefined {
+  return useLiveQuery(async () => (await db.routines.orderBy('sortOrder').toArray()).filter(alive));
+}
+
+export function useRoutine(id: string | undefined): Routine | null | undefined {
+  return useLiveQuery(async () => {
+    if (!id) return null;
+    const r = await db.routines.get(id);
+    return r && alive(r) ? r : null;
+  }, [id]);
+}
+
+/** Every workout (finished and in progress), oldest first. */
+export function useWorkouts(): Workout[] | undefined {
+  return useLiveQuery(async () => (await db.workouts.orderBy('startedAt').toArray()).filter(alive));
+}
+
+export function useWorkout(id: string | undefined): Workout | null | undefined {
+  return useLiveQuery(async () => {
+    if (!id) return null;
+    const w = await db.workouts.get(id);
+    return w && alive(w) ? w : null;
+  }, [id]);
 }

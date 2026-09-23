@@ -39,3 +39,16 @@ describe('backup', () => {
     );
   });
 });
+
+describe('workout CSV', () => {
+  it('writes one row per set with the exercise name', async () => {
+    const { workoutsCSV } = await import('./backup');
+    await db.exercises.put({ id: 'ex-bench-press', name: 'Bench Press', muscle: 'chest', equipment: 'barbell', bodyweight: false, incrementKg: 2.5, builtIn: true, archived: false, notes: null, createdAt: 0, updatedAt: 0, deletedAt: null });
+    await create('workouts', {
+      routineId: null, name: 'Push', date: '2026-01-01', startedAt: 0, endedAt: 3_600_000, notes: null,
+      exercises: [{ id: 'e', exerciseId: 'ex-bench-press', supersetGroup: null, restSec: 90, repMin: 6, repMax: 8, target: null, notes: null,
+        sets: [{ id: 's', kind: 'normal', weightKg: 60, reps: 8, rpe: 8, done: true, completedAt: 1 }] }],
+    });
+    expect(await workoutsCSV()).toBe('date,workout,exercise,set,type,weight_kg,reps,rpe,duration_min\n2026-01-01,Push,Bench Press,1,normal,60,8,8,60\n');
+  });
+});

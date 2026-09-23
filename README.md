@@ -6,19 +6,39 @@ runs full-screen like a native app, and works offline in the gym.
 
 No Mac, Xcode or App Store needed: build from Windows, deploy from GitHub, test on your iPhone.
 
-## Status: Phase 1 — foundation ✅
+## Status
 
+### Phase 2 — Gym ✅
+- **Programmes & routines:** ready-made Push/Pull/Legs, Upper/Lower and Full Body templates, or build your own.
+  Per exercise: sets, rep range, warm-up sets, rest time, supersets, reorder. Edits save instantly.
+- **Exercise library:** 60 built-in exercises plus your own custom ones; search and filter by muscle.
+- **Today tells you what's next:** routines rotate (Push → Pull → Legs → Push…). The card shows each exercise's
+  last session and **today's suggested weight × reps**, with a one-tap **Start workout**.
+- **Gym Mode:** full-screen and built for one thumb. It has a big weight/reps stepper, a large *Complete set* button,
+  and a set table (Prev · weight · reps · ✓). Warm-up and drop sets, optional RPE and exercise notes are there too.
+  Supersets alternate exercises automatically. The screen stays awake where iOS allows it.
+- **Rest timer:** starts automatically after each set and adjusts ±15 s. It survives the app being closed or reloaded,
+  and beeps (plus vibrates on Android) when rest is over.
+- **Progressive overload (double progression):** hit the top of your rep range on every set (RPE ≤ 9) and the app
+  suggests the next weight step. If you're inside the range, it suggests adding reps. Below the range twice in a row,
+  it suggests a ~10% deload. These are **only suggestions** that pre-fill today's sets; your routine never changes by itself.
+- **PB detection:** heaviest weight, most reps at a weight, estimated 1RM (Epley) and session volume, each shown
+  with your previous best. You get a live 🏆 toast during the workout, a PB list on the summary, and recent PBs on Today.
+- **Works offline:** a workout started with no signal is saved on every tap and syncs when you're back online.
+- **History:** a workout summary after Finish, history by week, and per-exercise history with an e1RM chart.
+  There's also a consistency card (sessions this week vs target, week streak) and a CSV export (one row per set).
+
+### Phase 1 — Foundation ✅
 - Installable PWA (manifest, icons, iOS splash screens, standalone mode, service worker)
 - Offline-first: app shell is cached, all data lives on the phone (IndexedDB)
 - Onboarding: profile, goal, current + target weight, calorie + protein targets (Mifflin–St Jeor estimate, fully editable)
-- **Today** dashboard: workout slot, calories & protein remaining, body-weight trend, water, coach insight, PBs & consistency placeholders
-- Nutrition quick-add (calories + macros per meal), water tracking, weigh-ins with 7-day average & weekly rate
-- Progress: weight chart, weekly averages, history (edit/delete)
+- **Today** dashboard: calories & protein remaining, body-weight trend, water, coach insight
+- Nutrition quick-add, water tracking, weigh-ins with 7-day average & weekly rate, progress chart
 - Optional cloud accounts + sync (Supabase) with an offline outbox, retries and last-write-wins conflict handling
 - Data ownership: JSON backup/restore, CSV export, erase
 - Dark mode (default), light mode, kg/lb, cm/ft-in
 
-Next: **Phase 2 — Gym** (routines, Gym Mode, set logging, PBs, progressive overload). See the roadmap below.
+Next: **Phase 3 — Progress** (measurements, goals, progress photos, analytics).
 
 ---
 
@@ -73,7 +93,8 @@ Without this the app runs in **on-device mode** — everything works, data just 
 (export backups from *More → Data & backup*). To add accounts, backup and multi-device sync:
 
 1. Create a free project at <https://supabase.com>.
-2. **SQL Editor** → paste and run [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql).
+2. **SQL Editor** → paste and run each file in [`supabase/migrations/`](supabase/migrations/) in order
+   (`0001_init.sql`, then `0002_training.sql`). When a new phase adds a migration, run just the new file.
 3. **Project Settings → API**: copy the *Project URL* and the *anon public* key.
 4. Add them as environment variables where you build:
    - Vercel: **Project → Settings → Environment Variables** → `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, then redeploy.
@@ -111,10 +132,11 @@ The anon key is safe to ship in the app: Row Level Security restricts every row 
 src/
   db/          types.ts (data model), db.ts (Dexie schema), repo.ts (all writes), hooks.ts (live queries)
   sync/        engine.ts (push/pull), manager.ts (auth + triggers + status), remote.ts (Supabase), mapping.ts
-  lib/         dates, units, calc/ (nutrition + weight maths), insights (coach rules), backup (export/restore)
+  db/seed/     built-in exercise library + programme templates (seeded on-device, stable ids)
+  lib/         dates, units, calc/ (nutrition, weight, training maths), insights (coach rules), backup (export/restore)
   pwa/         service-worker update prompt, install prompt, platform helpers
   components/  shared UI: BottomNav, Sheet, NumberField, LineChart, Toast, …
-  features/    onboarding/, today/, workout/, nutrition/, progress/, more/
+  features/    onboarding/, today/, workout/ (hub, routines, library, history, gym/ = Gym Mode), nutrition/, progress/, more/
   styles/      tokens.css (colours, dark/light), base, layout, components
 supabase/migrations/   cloud schema
 scripts/generate-icons.mjs   regenerates icons + iOS splash screens from public/icons/icon.svg
@@ -131,7 +153,8 @@ scripts/generate-icons.mjs   regenerates icons + iOS splash screens from public/
 | Background Sync API | ❌ not on iOS → syncs on open / reconnect / foreground instead |
 | Vibration | ❌ not on iOS → silently skipped (works on Android) |
 | Push notifications | iOS 16.4+ for installed apps only — planned for later |
-| Screen wake lock | iOS 16.4+ — will be used by Gym Mode (Phase 2) |
+| Screen wake lock | Used in Gym Mode where supported (recent iOS Home Screen apps); otherwise the screen may dim |
+| Rest-timer alert | Beep plays when the app is open; iOS can't run timers in the background, so if you lock the phone the timer is correct when you return but won't alert |
 
 To regenerate icons after editing `public/icons/icon.svg`:
 `npm i -D playwright && npx playwright install chromium && npm run icons`.
@@ -139,7 +162,7 @@ To regenerate icons after editing `public/icons/icon.svg`:
 ## Roadmap
 
 1. **Foundation** — PWA, profile, targets, Today, offline + sync ✅
-2. **Gym** — exercise library, routines, Gym Mode, set logging (RPE, warm-up/drop/super sets), rest timer, PBs, progressive overload
+2. **Gym** — exercise library, routines, Gym Mode, set logging (RPE, warm-up/drop/super sets), rest timer, PBs, progressive overload ✅
 3. **Progress** — measurements, goals, progress photos, analytics
 4. **Nutrition** — food database, custom foods, saved meals, meal history
 5. **Meal prep** — weekly planner, shopping lists, AI meal generator

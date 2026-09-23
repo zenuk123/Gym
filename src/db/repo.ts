@@ -69,6 +69,49 @@ export async function update<T extends SyncTable>(
   return saved;
 }
 
+/**
+ * Read-modify-write inside one transaction. Use this for records edited in quick
+ * succession (e.g. a live workout) so a second tap never works from stale state.
+ * Return the same object (or undefined) from `fn` to skip the write.
+ */
+export async function mutate<T extends SyncTable>(
+  name: T,
+  id: string,
+  fn: (current: SyncTableMap[T]) => SyncTableMap[T] | undefined,
+): Promise<SyncTableMap[T] | undefined> {
+  const t = table(name);
+  let saved: SyncTableMap[T] | undefined;
+  await db.transaction('rw', t, db.outbox, async () => {
+    const prev = await t.get(id);
+    if (!prev) return;
+    const next = fn(structuredClone(prev));
+    if (!next) return;
+    const now = nextTimestamp(prev.updatedAt);
+    saved = { ...next, id, createdAt: prev.createdAt, updatedAt: now } as SyncTableMap[T];
+    await t.put(saved);
+    await enqueue(name, id, now);
+  });
+  if (saved) notifyLocalChange();
+  return saved;
+}
+
+/**
+ * Insert built-in records (e.g. the exercise library) on this device only.
+ * They get stable ids and updatedAt = 0, so they are never uploaded unless the
+ * user edits them, and any cloud version always wins.
+ */
+export async function seedLocal<T extends SyncTable>(name: T, records: SyncTableMap[T][]): Promise<number> {
+  const t = table(name);
+  let added = 0;
+  await db.transaction('rw', t, async () => {
+    const existing = new Set((await t.toCollection().primaryKeys()) as string[]);
+    const fresh = records.filter((r) => !existing.has(r.id));
+    await t.bulkAdd(fresh);
+    added = fresh.length;
+  });
+  return added;
+}
+
 /** Soft delete so the deletion propagates to other devices. */
 export function remove<T extends SyncTable>(name: T, id: string) {
   return update(name, id, { deletedAt: Date.now() } as Partial<SyncTableMap[T]>);

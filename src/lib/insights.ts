@@ -25,11 +25,17 @@ export interface InsightInput {
   recentWeighIns: number;
   intake: { kcal: number; proteinG: number };
   hour: number;
+  training?: {
+    daysSinceLast: number | null;
+    pbsThisWeek: number;
+    nextRoutine: string | null;
+    active: boolean;
+  };
 }
 
 const STABLE_KG_PER_WEEK = 0.1;
 
-export function generateInsights({ profile, weight, recentWeighIns, intake, hour }: InsightInput): Insight[] {
+export function generateInsights({ profile, weight, recentWeighIns, intake, hour, training }: InsightInput): Insight[] {
   const out: Insight[] = [];
   const u = profile.weightUnit;
   const { rate } = weight;
@@ -91,6 +97,26 @@ export function generateInsights({ profile, weight, recentWeighIns, intake, hour
       priority: 70,
       text: `You still need ${Math.round(proteinLeft)} g of protein today. A protein-heavy dinner or shake would close the gap.`,
     });
+  }
+
+  if (training && !training.active) {
+    const { daysSinceLast: d, pbsThisWeek, nextRoutine } = training;
+    if (d !== null && d >= 4) {
+      out.push({
+        id: 'train-gap',
+        kind: 'fact',
+        priority: 75,
+        text: `It's been ${d} days since your last workout.${nextRoutine ? ` Next up: ${nextRoutine}.` : ''}`,
+      });
+    }
+    if (pbsThisWeek > 0) {
+      out.push({
+        id: 'pbs-week',
+        kind: 'fact',
+        priority: 45,
+        text: `You've set ${pbsThisWeek} personal best${pbsThisWeek === 1 ? '' : 's'} this week. 🏆`,
+      });
+    }
   }
 
   return out.sort((a, b) => b.priority - a.priority);

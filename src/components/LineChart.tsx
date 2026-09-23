@@ -17,6 +17,7 @@ export function LineChart({
   tone = 'var(--weight)',
   formatY = (v) => v.toFixed(1),
   compact = false,
+  label = 'Weight trend chart',
 }: {
   raw: ChartPoint[];
   trend: ChartPoint[];
@@ -25,6 +26,7 @@ export function LineChart({
   tone?: string;
   formatY?: (v: number) => string;
   compact?: boolean;
+  label?: string;
 }) {
   const gradId = useId();
   const box = useRef<HTMLDivElement>(null);
@@ -63,7 +65,7 @@ export function LineChart({
 
   return (
     <div ref={box}>
-    <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} role="img" aria-label="Weight trend chart" style={{ overflow: 'visible' }}>
+    <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} role="img" aria-label={label} style={{ overflow: 'visible' }}>
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor={tone} stopOpacity="0.28" />

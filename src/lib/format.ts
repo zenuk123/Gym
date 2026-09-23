@@ -13,3 +13,6 @@ export function formatTimeAgo(ts: number, now = Date.now()): string {
   if (h < 24) return `${h} h ago`;
   return `${Math.round(h / 24)} d ago`;
 }
+
+/** "1 set", "3 sets". */
+export const plural = (n: number, word: string, many = `${word}s`) => `${n} ${n === 1 ? word : many}`;

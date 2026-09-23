@@ -8,6 +8,9 @@ import { addDays, formatDateLong, greeting } from '../../lib/dates';
 import { generateInsights } from '../../lib/insights';
 import { sumIntake } from '../../lib/intake';
 import { useToday } from '../../lib/useToday';
+import { daysBetween, startOfWeek } from '../../lib/dates';
+import { nextRoutine } from '../../lib/calc/training';
+import { useTraining } from '../workout/useTraining';
 import { CoachCard } from './cards/CoachCard';
 import { ConsistencyCard } from './cards/ConsistencyCard';
 import { NutritionCard } from './cards/NutritionCard';
@@ -22,6 +25,7 @@ export function TodayPage({ profile }: { profile: Profile }) {
   const today = useToday();
   const weights = useWeights();
   const foodLogs = useFoodLogs(today);
+  const t = useTraining();
 
   const intake = useMemo(() => sumIntake(foodLogs ?? []), [foodLogs]);
   const summary = useMemo(
@@ -31,8 +35,14 @@ export function TodayPage({ profile }: { profile: Profile }) {
   const insights = useMemo(() => {
     const since = addDays(today, -20);
     const recentWeighIns = new Set((weights ?? []).filter((w) => w.date >= since).map((w) => w.date)).size;
-    return generateInsights({ profile, weight: summary, recentWeighIns, intake, hour: new Date().getHours() });
-  }, [profile, summary, weights, intake, today]);
+    const training = t && {
+      daysSinceLast: t.finished.length ? daysBetween(t.finished.at(-1)!.date, today) : null,
+      pbsThisWeek: t.pbs.filter((p) => p.date >= startOfWeek(today)).length,
+      nextRoutine: nextRoutine(t.routines, t.finished)?.name ?? null,
+      active: !!t.active,
+    };
+    return generateInsights({ profile, weight: summary, recentWeighIns, intake, hour: new Date().getHours(), training });
+  }, [profile, summary, weights, intake, today, t]);
 
   return (
     <main className="page today">
@@ -49,14 +59,14 @@ export function TodayPage({ profile }: { profile: Profile }) {
       </header>
 
       <InstallBanner />
-      <WorkoutCard profile={profile} />
+      {t && <WorkoutCard profile={profile} t={t} today={today} />}
       <NutritionCard profile={profile} intake={intake} date={today} />
       {weights && <WeightCard profile={profile} weights={weights} summary={summary} today={today} />}
       <WaterCard profile={profile} date={today} />
       <CoachCard insights={insights} />
       <div className="today-pair">
-        <PBsCard />
-        <ConsistencyCard profile={profile} />
+        {t && <PBsCard profile={profile} t={t} today={today} />}
+        {t && <ConsistencyCard profile={profile} t={t} today={today} />}
       </div>
     </main>
   );

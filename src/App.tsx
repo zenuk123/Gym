@@ -5,6 +5,11 @@ import { useProfile } from './db/hooks';
 import { Onboarding } from './features/onboarding/Onboarding';
 import { TodayPage } from './features/today/TodayPage';
 import { WorkoutPage } from './features/workout/WorkoutPage';
+import { RoutineEditor } from './features/workout/RoutineEditor';
+import { SessionPage } from './features/workout/SessionPage';
+import { HistoryPage } from './features/workout/HistoryPage';
+import { ExerciseDetail, ExerciseLibrary } from './features/workout/ExerciseLibrary';
+import { GymMode } from './features/workout/gym/GymMode';
 import { NutritionPage } from './features/nutrition/NutritionPage';
 import { ProgressPage } from './features/progress/ProgressPage';
 import { MorePage } from './features/more/MorePage';
@@ -24,6 +29,8 @@ function ScrollToTop() {
 
 export function App() {
   const profile = useProfile();
+  const { pathname } = useLocation();
+  const inGym = pathname === '/gym';
 
   return (
     <>
@@ -39,6 +46,13 @@ export function App() {
           <Routes>
             <Route path="/" element={<TodayPage profile={profile} />} />
             <Route path="/workout" element={<WorkoutPage profile={profile} />} />
+            <Route path="/workout/routine/:id" element={<RoutineEditor profile={profile} />} />
+            <Route path="/workout/session/:id" element={<SessionPage profile={profile} />} />
+            <Route path="/workout/summary/:id" element={<SessionPage profile={profile} celebrate />} />
+            <Route path="/workout/history" element={<HistoryPage profile={profile} />} />
+            <Route path="/workout/exercises" element={<ExerciseLibrary profile={profile} />} />
+            <Route path="/workout/exercises/:id" element={<ExerciseDetail profile={profile} />} />
+            <Route path="/gym" element={<GymMode profile={profile} />} />
             <Route path="/nutrition" element={<NutritionPage profile={profile} />} />
             <Route path="/progress" element={<ProgressPage profile={profile} />} />
             <Route path="/more" element={<MorePage profile={profile} />} />
@@ -50,7 +64,7 @@ export function App() {
             <Route path="/more/about" element={<AboutPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-          <BottomNav />
+          {!inGym && <BottomNav />}
         </>
       )}
     </>

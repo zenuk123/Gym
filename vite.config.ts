@@ -43,6 +43,9 @@ export default defineConfig(({ mode }) => {
           globIgnores: ['splash/**'],
           navigateFallback: 'index.html',
           cleanupOutdatedCaches: true,
+          // First install takes control straight away (so the very first visit is already
+          // offline-capable). Updates still wait for the user to tap "Update".
+          clientsClaim: true,
         },
         devOptions: { enabled: false },
       }),

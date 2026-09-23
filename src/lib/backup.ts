@@ -113,6 +113,28 @@ export async function waterCSV(): Promise<string> {
   ]);
 }
 
+/** One row per logged set — easy to pivot in a spreadsheet. */
+export async function workoutsCSV(): Promise<string> {
+  const exercises = new Map((await db.exercises.toArray()).map((e) => [e.id, e.name]));
+  const workouts = alive(await db.workouts.orderBy('startedAt').toArray()).filter((w) => w.endedAt !== null);
+  const rows = workouts.flatMap((w) =>
+    w.exercises.flatMap((ex) =>
+      ex.sets.map((s, i) => ({ w, ex, s, n: i + 1 })),
+    ),
+  );
+  return toCSV(rows, [
+    { header: 'date', get: (r) => r.w.date },
+    { header: 'workout', get: (r) => r.w.name },
+    { header: 'exercise', get: (r) => exercises.get(r.ex.exerciseId) ?? r.ex.exerciseId },
+    { header: 'set', get: (r) => r.n },
+    { header: 'type', get: (r) => r.s.kind },
+    { header: 'weight_kg', get: (r) => r.s.weightKg },
+    { header: 'reps', get: (r) => r.s.reps },
+    { header: 'rpe', get: (r) => r.s.rpe },
+    { header: 'duration_min', get: (r) => Math.round(((r.w.endedAt ?? r.w.startedAt) - r.w.startedAt) / 60000) },
+  ]);
+}
+
 export const stampedName = (base: string, ext: string) => `${base}-${toISODate()}.${ext}`;
 
 /**

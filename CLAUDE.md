@@ -24,6 +24,15 @@ The owner has **no Mac** — never introduce Xcode, Swift or Mac-only tooling. N
    `user_id`, `sync_seq`, PK `(user_id, id)`, and add the table to the trigger/RLS loop.
 4. Hook in `src/db/hooks.ts`, CSV/backup coverage is automatic for JSON.
 
+## Training (Phase 2)
+- Pure maths lives in `src/lib/calc/training.ts` (history index, PBs, progression, rotation, streaks) and pure
+  workout editing in `src/features/workout/logic.ts`. Keep them React/DB-free and unit-tested.
+- A workout stores its exercises and sets **embedded** (`Workout.exercises[].sets[]`); edit live workouts only via
+  `repo.mutate` (see `features/workout/actions.ts`) so rapid taps never overwrite each other.
+- Built-in exercises are seeded locally (`db/seed/exercises.ts`) with stable ids and `updatedAt: 0`; never rename an id.
+- Progression suggestions only pre-fill today's sets — never modify a routine automatically.
+- `useTraining()` derives everything (history, PBs, active workout) from live queries; reuse it instead of re-querying.
+
 ## UI conventions
 - Design for a 375–440 px wide iPhone first. Touch targets ≥ 44 px, inputs ≥ 16 px font (prevents iOS zoom).
 - Respect safe areas (`--safe-top`, `--safe-bottom`). Bottom nav is fixed; pages pad for it.

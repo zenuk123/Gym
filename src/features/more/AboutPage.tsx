@@ -4,7 +4,7 @@ import { isIOS, isStandalone, useOnline } from '../../pwa/platform';
 
 const PHASES = [
   { n: 1, title: 'Foundation', desc: 'Installable app, profile, targets, Today dashboard, offline + sync', done: true },
-  { n: 2, title: 'Gym', desc: 'Routines, Gym Mode, set logging, PBs, progressive overload' },
+  { n: 2, title: 'Gym', desc: 'Routines, Gym Mode, set logging, PBs, progressive overload', done: true },
   { n: 3, title: 'Progress', desc: 'Measurements, goals, photos, analytics' },
   { n: 4, title: 'Nutrition', desc: 'Food database, custom foods, saved meals' },
   { n: 5, title: 'Meal prep', desc: 'Weekly planner, shopping lists, AI meal ideas' },

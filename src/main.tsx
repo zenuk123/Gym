@@ -6,6 +6,7 @@ import { ToastProvider } from './components/Toast';
 import { applyTheme, watchSystemTheme } from './lib/theme';
 import { requestPersistentStorage } from './pwa/storage';
 import { startSync } from './sync/manager';
+import { seedExercises } from './db/seed/exercises';
 import './styles/tokens.css';
 import './styles/base.css';
 import './styles/layout.css';
@@ -14,6 +15,7 @@ import './styles/components.css';
 applyTheme();
 watchSystemTheme();
 void requestPersistentStorage();
+void seedExercises().catch((err) => console.warn('Exercise library seed failed', err));
 void startSync().catch((err) => console.warn('Sync failed to start', err));
 
 createRoot(document.getElementById('root')!).render(
