@@ -8,6 +8,23 @@ No Mac, Xcode or App Store needed: build from Windows, deploy from GitHub, test 
 
 ## Status
 
+### Recipes & easier meal planning ✅
+- **Recipe library** (*Nutrition → Recipes*): 26 built-in fitness recipes, from breakfasts and lunches to batch-cook
+  dinners and snacks, plus your own. Each has a method, prep time and servings. Nutrition is worked out from the
+  ingredients using the food database. Browse them as photo cards, search by name or ingredient, and filter by meal,
+  high protein, quick, meal prep, vegetarian, vegan, light, your recipes or favourites.
+- **Pictures:** add your own photo to any recipe from the camera or your library. It's cropped and compressed to
+  about 50 KB so it syncs and backs up with the recipe. Recipes without a photo show an illustrated cover.
+- **Recipe page:** macros per portion, ingredients scaled to however many portions you're cooking, a method you tick
+  through as you cook, and one-tap **Add to plan** (several days at once) or **Log it**.
+- **Plan my week for me** (*Plan → Auto-fill*): fills the empty meals with recipes that land near your daily calories
+  and protein. It adds variety (no recipe more than twice, except meal-prep batches) and can stick to vegetarian,
+  vegan, quick or high-protein recipes. You see the whole week first, then **Swap**, remove or **Shuffle** before anything is
+  saved. It's a suggestion only, and your targets never change.
+- **Easier adding:** tapping **+** on a meal shows recipe photo cards, with the best fits for that meal first. Tapping a planned meal
+  opens its recipe or offers **swaps** with photos. Everything planned still feeds the shopping list.
+- With sync on, run migration `0009_recipes.sql`.
+
 ### Reset & shopping prices ✅
 - **Reset** on Today's workout: discard a workout in progress (with undo), or restart the programme rotation by picking
   which routine is next — history is kept, and the rotation carries on in order after you do it.
@@ -198,7 +215,7 @@ Without this the app runs in **on-device mode** — everything works, data just 
 
 1. Create a free project at <https://supabase.com>.
 2. **SQL Editor** → paste and run each file in [`supabase/migrations/`](supabase/migrations/) in order
-   (`0001_init.sql` … `0008_prices_and_reset.sql`). When a new phase adds a migration, run just the new file.
+   (`0001_init.sql` … `0009_recipes.sql`). When a new phase adds a migration, run just the new file.
    `0003` also creates the private `progress-photos` storage bucket (owner-only access).
 3. **Project Settings → API**: copy the *Project URL* and the *anon public* key.
 4. Add them as environment variables where you build:

@@ -122,7 +122,22 @@ export interface SavedMeal extends SyncFields {
   items: MealItem[];
   notes: string | null;
   favourite: boolean;
+  /** Recipe extras (all optional so older meals stay valid). */
+  /** Your photo, as a small JPEG data URL (≈50 KB) so it syncs and backs up with the meal. */
+  image?: string | null;
+  /** Method, one step per entry. */
+  steps?: string[] | null;
+  /** Total prep + cook time, minutes. */
+  prepMin?: number | null;
+  tags?: RecipeTag[] | null;
+  /** Built-in recipes are seeded on every device (stable ids, updatedAt 0). */
+  source?: 'builtin' | 'custom' | null;
+  /** Emoji for the illustrated cover shown until you add a photo. */
+  cover?: string | null;
 }
+
+export const RECIPE_TAGS = ['high-protein', 'vegetarian', 'vegan', 'quick', 'meal-prep', 'low-calorie'] as const;
+export type RecipeTag = (typeof RECIPE_TAGS)[number];
 
 export interface WaterLog extends SyncFields {
   date: ISODate;

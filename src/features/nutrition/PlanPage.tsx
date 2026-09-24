@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Icon } from '../../components/Icon';
 import { MiniStepper } from '../workout/MiniStepper';
 import { PageHeader } from '../../components/PageHeader';
@@ -8,6 +8,10 @@ import { Segmented } from '../../components/Segmented';
 import { Sheet } from '../../components/Sheet';
 import { useToast } from '../../components/Toast';
 import { usePlanItems, useSavedMeals } from '../../db/hooks';
+import { SLOT_SHARE, swapOptions } from '../../lib/calc/recipes';
+import { AutoPlanSheet } from './recipes/AutoPlanSheet';
+import { RecipeImage } from './recipes/RecipeImage';
+import { RecipePickerSheet } from './recipes/RecipePickerSheet';
 import { remove, update } from '../../db/repo';
 import type { MealSlot, PlanItem, Profile, SavedMeal } from '../../db/types';
 import { mealPerServing } from '../../lib/calc/food';
@@ -31,6 +35,11 @@ export function PlanPage({ profile }: { profile: Profile }) {
   const weekEnd = addDays(weekStart, 6);
   const items = usePlanItems(weekStart, weekEnd);
   const [adding, setAdding] = useState<{ date: string; slot: MealSlot } | null>(null);
+  const [picking, setPicking] = useState<{ date: string; slot: MealSlot } | null>(null);
+  const [params, setParams] = useSearchParams();
+  const [autofill, setAutofill] = useState(params.get('autofill') === '1');
+  const meals = useSavedMeals();
+  const mealById = useMemo(() => new Map((meals ?? []).map((m) => [m.id, m])), [meals]);
   const [selected, setSelected] = useState<PlanItem | null>(null);
   const [prepping, setPrepping] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
@@ -50,9 +59,9 @@ export function PlanPage({ profile }: { profile: Profile }) {
       <PageHeader
         title="Nutrition"
         action={
-          <button className="btn btn-primary" onClick={() => setPrepping(true)}>
-            <Icon name="calendar" />
-            Meal prep
+          <button className="btn btn-primary" onClick={() => setAutofill(true)}>
+            <Icon name="sparkles" />
+            Auto-fill
           </button>
         }
       />
@@ -117,6 +126,7 @@ export function PlanPage({ profile }: { profile: Profile }) {
                   <div className="plan-slot-items">
                     {slotItems.map((p) => (
                       <button key={p.id} className={`plan-item${p.loggedId ? ' eaten' : ''}`} onClick={() => setSelected(p)}>
+                        {p.mealId && mealById.get(p.mealId) && <RecipeImage meal={mealById.get(p.mealId)!} size="thumb" />}
                         <span className="name">
                           {p.loggedId && '✓ '}
                           {p.name}
@@ -124,7 +134,7 @@ export function PlanPage({ profile }: { profile: Profile }) {
                         <span className="kcal">{formatInt(p.kcal)}</span>
                       </button>
                     ))}
-                    <button className="plan-add" onClick={() => setAdding({ date: d, slot: m.value })} aria-label={`Plan ${m.label.toLowerCase()} on ${formatDateShort(d)}`}>
+                    <button className="plan-add" onClick={() => setPicking({ date: d, slot: m.value })} aria-label={`Plan ${m.label.toLowerCase()} on ${formatDateShort(d)}`}>
                       <Icon name="plus" width={16} height={16} />
                     </button>
                   </div>
@@ -136,6 +146,9 @@ export function PlanPage({ profile }: { profile: Profile }) {
       })}
 
       <div className="btn-row">
+        <button className="btn" onClick={() => setPrepping(true)}>
+          <Icon name="calendar" /> Meal prep
+        </button>
         <button
           className="btn"
           onClick={async () => {
@@ -185,18 +198,64 @@ export function PlanPage({ profile }: { profile: Profile }) {
           }}
         />
       )}
-      {selected && <PlanItemSheet item={selected} weekDays={days} onClose={() => setSelected(null)} />}
+      {picking &&
+        (() => {
+          const dayItems = byDay.get(picking.date) ?? [];
+          const t = dayTotals(dayItems);
+          const emptyShare = MEALS.filter((m) => m.value === picking.slot || !dayItems.some((x) => x.slot === m.value)).reduce((a, m) => a + SLOT_SHARE[m.value], 0);
+          const frac = SLOT_SHARE[picking.slot] / Math.max(emptyShare, SLOT_SHARE[picking.slot]);
+          const budget = Math.min(profile.calorieTarget * SLOT_SHARE[picking.slot] * 1.5, Math.max(120, (profile.calorieTarget - t.kcal) * frac));
+          return (
+            <RecipePickerSheet
+              title={`${MEALS.find((m) => m.value === picking.slot)!.label} · ${formatDateShort(picking.date)}`}
+              slot={picking.slot}
+              budget={budget}
+              proteinAim={Math.max(0, (profile.proteinTarget - t.proteinG) * frac)}
+              onClose={() => setPicking(null)}
+              onSearchFoods={() => {
+                setAdding(picking);
+                setPicking(null);
+              }}
+              onPick={async (meal, servings) => {
+                await addPlanItem(planMeal(picking.date, picking.slot, meal, servings));
+                toast(`Planned ${meal.name}`);
+                setPicking(null);
+              }}
+            />
+          );
+        })()}
+      {autofill && (
+        <AutoPlanSheet
+          profile={profile}
+          days={days.filter((d) => d >= today || weekStart > today)}
+          existing={items ?? []}
+          onClose={() => {
+            setAutofill(false);
+            if (params.get('autofill')) setParams({}, { replace: true });
+          }}
+        />
+      )}
+      {selected && <PlanItemSheet item={selected} weekDays={days} meals={meals ?? []} onClose={() => setSelected(null)} />}
       {prepping && <MealPrepSheet startDate={weekStart < today && addDays(weekStart, 6) >= today ? today : weekStart} onClose={() => setPrepping(false)} />}
     </main>
   );
 }
 
-function PlanItemSheet({ item, weekDays, onClose }: { item: PlanItem; weekDays: string[]; onClose: () => void }) {
+function PlanItemSheet({ item, weekDays, meals, onClose }: { item: PlanItem; weekDays: string[]; meals: SavedMeal[]; onClose: () => void }) {
   const toast = useToast();
+  const recipe = item.mealId ? meals.find((m) => m.id === item.mealId) : undefined;
+  const swaps = item.loggedId ? [] : swapOptions(meals, item.slot, Math.max(150, item.kcal), item.proteinG, item.mealId, 6);
   const [copyTo, setCopyTo] = useState<string[]>([]);
   const others = weekDays.filter((d) => d !== item.date);
   return (
     <Sheet title={item.name} onClose={onClose}>
+      {recipe && (
+        <Link to={`/nutrition/meals/${recipe.id}`} className="plan-recipe-link">
+          <RecipeImage meal={recipe} size="thumb" />
+          <span className="grow">View recipe & method</span>
+          <Icon name="chevronRight" />
+        </Link>
+      )}
       <p className="muted" style={{ fontSize: 14 }}>
         {formatDateShort(item.date)} · {MEALS.find((m) => m.value === item.slot)!.label} · {formatInt(item.kcal)} kcal · {round(item.proteinG, 0)} g protein
         {item.servings ? ` · ${item.servings} serving${item.servings === 1 ? '' : 's'}` : item.amountG ? ` · ${item.amountG} g` : ''}
@@ -222,6 +281,29 @@ function PlanItemSheet({ item, weekDays, onClose }: { item: PlanItem; weekDays: 
       >
         <Icon name="check" /> {item.loggedId ? 'Not eaten after all' : 'Mark as eaten (logs it)'}
       </button>
+      {swaps.length > 0 && (
+        <div className="field">
+          <span className="label">Swap for</span>
+          <div className="swap-row">
+            {swaps.map((o) => (
+              <button
+                key={o.meal.id}
+                className="swap-card"
+                onClick={async () => {
+                  await remove('planItems', item.id);
+                  await addPlanItem(planMeal(item.date, item.slot, o.meal, o.servings));
+                  toast(`Swapped for ${o.meal.name}`);
+                  onClose();
+                }}
+              >
+                <RecipeImage meal={o.meal} size="thumb" />
+                <span className="name">{o.meal.name}</span>
+                <span className="faint">{formatInt(o.kcal)} kcal</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="field">
         <span className="label">Also plan it on</span>
         <div className="chip-wrap">

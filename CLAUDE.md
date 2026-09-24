@@ -77,6 +77,13 @@ The owner has **no Mac** — never introduce Xcode, Swift or Mac-only tooling. N
 - Price book: `prices` table (user-entered, per item × shop, optional pack size). Maths in `lib/calc/prices.ts`
   (`itemKey`, whole-pack `lineCost`, `shopTotals`, `bestMix`). Never present prices as live shop prices.
 
+## Recipes & planning
+- Recipes are `SavedMeal`s with optional `image` (small JPEG data URL via `lib/image.ts → mealPhotoDataUrl`),
+  `steps`, `prepMin`, `tags` (only vegetarian/vegan stored; others derived by `recipeTags`), `source`, `cover`.
+- Built-in recipes: `db/seed/recipes.ts` (stable ids `recipe-<slug>`, ingredients must be built-in foods; test enforces it).
+- Planner maths: `lib/calc/recipes.ts` (`autoPlan`, `swapOptions`, `filterRecipes`) — pure + tested; it only proposes.
+- Don't name CSS modifier classes `card`/`hero`-style generic words on elements that aren't cards (global `.card` exists).
+
 ## UI conventions
 - Design for a 375–440 px wide iPhone first. Touch targets ≥ 44 px, inputs ≥ 16 px font (prevents iOS zoom).
 - Respect safe areas (`--safe-top`, `--safe-bottom`). Bottom nav is fixed; pages pad for it.

@@ -12,7 +12,9 @@ import { ExerciseDetail, ExerciseLibrary } from './features/workout/ExerciseLibr
 import { GymMode } from './features/workout/gym/GymMode';
 import { NutritionPage } from './features/nutrition/NutritionPage';
 import { FoodEditor, FoodsPage } from './features/nutrition/FoodsPage';
-import { MealEditor, MealsPage } from './features/nutrition/MealsPage';
+import { MealEditor } from './features/nutrition/MealsPage';
+import { RecipesPage } from './features/nutrition/recipes/RecipesPage';
+import { RecipePage } from './features/nutrition/recipes/RecipePage';
 import { PlanPage } from './features/nutrition/PlanPage';
 import { ShoppingPage } from './features/nutrition/ShoppingPage';
 import { PricesPage } from './features/nutrition/PricesPage';
@@ -75,8 +77,9 @@ export function App() {
             <Route path="/nutrition" element={<NutritionPage profile={profile} />} />
             <Route path="/nutrition/foods" element={<FoodsPage />} />
             <Route path="/nutrition/foods/:id" element={<FoodEditor />} />
-            <Route path="/nutrition/meals" element={<MealsPage />} />
-            <Route path="/nutrition/meals/:id" element={<MealEditor />} />
+            <Route path="/nutrition/meals" element={<RecipesPage />} />
+            <Route path="/nutrition/meals/:id" element={<RecipePage />} />
+            <Route path="/nutrition/meals/:id/edit" element={<MealEditor />} />
             <Route path="/nutrition/plan" element={<PlanPage profile={profile} />} />
             <Route path="/nutrition/shopping" element={<ShoppingPage profile={profile} />} />
             <Route path="/nutrition/prices" element={<PricesPage profile={profile} />} />

@@ -4,7 +4,7 @@ const TABS = [
   { to: '/nutrition', label: 'Log', end: true },
   { to: '/nutrition/plan', label: 'Plan' },
   { to: '/nutrition/shopping', label: 'Shopping' },
-  { to: '/nutrition/meals', label: 'Meals' },
+  { to: '/nutrition/meals', label: 'Recipes' },
   { to: '/nutrition/foods', label: 'Foods' },
 ];
 

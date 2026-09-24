@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import { EmptyState } from '../../components/CardHead';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Icon } from '../../components/Icon';
 import { NumberField, TextField } from '../../components/NumberField';
-import { PageHeader, SubHeader } from '../../components/PageHeader';
+import { SubHeader } from '../../components/PageHeader';
 import { Segmented } from '../../components/Segmented';
 import { useToast } from '../../components/Toast';
 import { useSavedMeals } from '../../db/hooks';
@@ -16,71 +15,10 @@ import { parseDecimal, round } from '../../lib/units';
 import { useToday } from '../../lib/useToday';
 import { MiniStepper } from '../workout/MiniStepper';
 import { AddFoodSheet } from './AddFoodSheet';
-import { NutritionTabs } from './NutritionTabs';
 import { MEALS, mealForNow } from './QuickAddSheet';
 import './nutrition.css';
 
-/** Saved meals & recipes — log in one tap, plan them, or batch-cook for the week. */
-export function MealsPage() {
-  const meals = useSavedMeals();
-  const navigate = useNavigate();
-  if (!meals) return <main className="page" />;
-
-  async function newMeal() {
-    const m = await create('meals', { name: 'New meal', slot: null, servings: 1, items: [], notes: null, favourite: false });
-    navigate(`/nutrition/meals/${m.id}`);
-  }
-
-  return (
-    <main className="page">
-      <PageHeader
-        title="Nutrition"
-        action={
-          <button className="btn btn-primary" onClick={() => void newMeal()}>
-            <Icon name="plus" />
-            Meal
-          </button>
-        }
-      />
-      <NutritionTabs />
-      {meals.length === 0 ? (
-        <section className="card">
-          <EmptyState icon="utensils">
-            <b className="empty-title">Save meals you eat often</b>
-            Build one here, or tap “Save as meal” under any meal in your log. Recipes can make several portions for meal prep.
-          </EmptyState>
-          <button className="btn btn-block" onClick={() => void newMeal()}>
-            <Icon name="plus" /> New meal
-          </button>
-        </section>
-      ) : (
-        <div className="list">
-          {meals.map((m) => {
-            const n = mealPerServing(m);
-            return (
-              <Link key={m.id} to={`/nutrition/meals/${m.id}`} className="list-row">
-                <div className="grow">
-                  <div className="title">
-                    {m.name}
-                    {m.favourite && <span className="star">★</span>}
-                  </div>
-                  <div className="desc">
-                    {n.kcal} kcal · {round(n.proteinG, 0)} g protein per serving
-                    {m.servings > 1 && ` · makes ${m.servings}`}
-                  </div>
-                </div>
-                <span className="trail">
-                  <Icon name="chevronRight" />
-                </span>
-              </Link>
-            );
-          })}
-        </div>
-      )}
-    </main>
-  );
-}
-
+/** Edit a recipe / saved meal: ingredients, portions, method, time and diet tags. */
 export function MealEditor() {
   const { id } = useParams();
   const meals = useSavedMeals();
@@ -90,13 +28,14 @@ export function MealEditor() {
   const [adding, setAdding] = useState(false);
   const [logging, setLogging] = useState(false);
   const [name, setName] = useState<string | null>(null);
+  const [prep, setPrep] = useState<string | null>(null);
   const meal = meals?.find((m) => m.id === id);
   if (!meals) return <main className="page" />;
   if (!meal) {
     return (
       <main className="page">
-        <SubHeader title="Meal" back="/nutrition/meals" />
-        <p className="muted">Meal not found.</p>
+        <SubHeader title="Recipe" back="/nutrition/meals" />
+        <p className="muted">Recipe not found.</p>
       </main>
     );
   }
@@ -108,7 +47,7 @@ export function MealEditor() {
 
   return (
     <main className="page">
-      <SubHeader title="Meal" back="/nutrition/meals" />
+      <SubHeader title="Edit recipe" back={`/nutrition/meals/${meal.id}`} />
       <TextField
         label="Name"
         value={name ?? meal.name}
@@ -201,8 +140,52 @@ export function MealEditor() {
         </button>
       )}
       <div className="field">
-        <label htmlFor="meal-notes">Notes / method</label>
-        <textarea id="meal-notes" className="textarea" rows={3} defaultValue={meal.notes ?? ''} onBlur={(e) => save({ notes: e.target.value.trim() || null })} />
+        <label htmlFor="meal-steps">Method — one step per line</label>
+        <textarea
+          id="meal-steps"
+          className="textarea"
+          rows={5}
+          defaultValue={(meal.steps?.length ? meal.steps : (meal.notes ?? '').split('\n')).join('\n')}
+          placeholder={'Cook the rice.\nFry the chicken for 6 minutes a side.\nServe with the veg.'}
+          onBlur={(e) => save({ steps: e.target.value.split('\n').map((l) => l.trim()).filter(Boolean) })}
+        />
+      </div>
+      <div className="field-row">
+        <NumberField
+          label="Time (minutes)"
+          decimal={false}
+          value={prep ?? (meal.prepMin != null ? String(meal.prepMin) : '')}
+          onChange={(v) => {
+            setPrep(v);
+            const n = parseDecimal(v);
+            save({ prepMin: n && n > 0 ? Math.round(n) : null });
+          }}
+          placeholder="e.g. 20"
+        />
+        <div className="field">
+          <span className="label">Diet</span>
+          <div className="chip-wrap">
+            {(['vegetarian', 'vegan'] as const).map((t) => {
+              const on = (meal.tags ?? []).includes(t);
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  className="chip"
+                  aria-pressed={on}
+                  onClick={() => {
+                    let tags = (meal.tags ?? []).filter((x) => x !== t);
+                    if (!on) tags = [...tags, t];
+                    if (!on && t === 'vegan' && !tags.includes('vegetarian')) tags.push('vegetarian');
+                    save({ tags });
+                  }}
+                >
+                  {t === 'vegan' ? 'Vegan' : 'Vegetarian'}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
       <div className="btn-row">
         <button className="btn" onClick={() => save({ favourite: !meal.favourite })}>
@@ -238,7 +221,7 @@ export function MealEditor() {
 }
 
 /** Log N servings of a saved meal. */
-function LogMealSheet({ meal, date, onClose }: { meal: SavedMeal; date: string; onClose: () => void }) {
+export function LogMealSheet({ meal, date, onClose }: { meal: SavedMeal; date: string; onClose: () => void }) {
   const toast = useToast();
   const [servings, setServings] = useState('1');
   const [slot, setSlot] = useState<MealSlot>(meal.slot ?? mealForNow());

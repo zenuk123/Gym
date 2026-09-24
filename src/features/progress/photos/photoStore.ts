@@ -4,6 +4,7 @@ import { create, remove, update } from '../../../db/repo';
 import type { ISODate, PhotoPose, ProgressPhoto } from '../../../db/types';
 import { notifyLocalChange } from '../../../sync/signal';
 import { downloadPhoto } from '../../../sync/manager';
+import { decodeImage } from '../../../lib/image';
 
 /**
  * Progress photos are private: stored inside the app (IndexedDB), never in the camera
@@ -12,26 +13,6 @@ import { downloadPhoto } from '../../../sync/manager';
 
 const FULL_EDGE = 1600;
 const THUMB_EDGE = 360;
-
-async function decode(file: Blob): Promise<ImageBitmap | HTMLImageElement> {
-  if ('createImageBitmap' in window) {
-    try {
-      // Honour EXIF orientation (iPhone photos are often stored rotated).
-      return await createImageBitmap(file, { imageOrientation: 'from-image' });
-    } catch {
-      /* fall back to <img> */
-    }
-  }
-  const url = URL.createObjectURL(file);
-  try {
-    const img = new Image();
-    img.src = url;
-    await img.decode();
-    return img;
-  } finally {
-    URL.revokeObjectURL(url);
-  }
-}
 
 function render(src: ImageBitmap | HTMLImageElement, maxEdge: number, quality: number): Promise<{ blob: Blob; w: number; h: number }> {
   const sw = 'naturalWidth' in src ? src.naturalWidth : src.width;
@@ -51,7 +32,7 @@ function render(src: ImageBitmap | HTMLImageElement, maxEdge: number, quality: n
 }
 
 export async function processImage(file: Blob) {
-  const src = await decode(file);
+  const src = await decodeImage(file);
   const full = await render(src, FULL_EDGE, 0.85);
   const thumb = await render(src, THUMB_EDGE, 0.8);
   if ('close' in src) src.close();

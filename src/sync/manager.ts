@@ -6,6 +6,7 @@ import { getClient, supabaseAdapter, type CloudUser } from './remote';
 import { onLocalChange } from './signal';
 import { seedExercises } from '../db/seed/exercises';
 import { seedFoods } from '../db/seed/foods';
+import { seedRecipes } from '../db/seed/recipes';
 
 /**
  * Owns the sync lifecycle: auth state, when to sync, and the status shown in the UI.
@@ -122,7 +123,7 @@ async function setUser(user: CloudUser | null) {
   }
   try {
     // Switching accounts wipes local tables, so put the built-in library back.
-    if ((await claimDevice(user.id)) === 'switched') await Promise.all([seedExercises(), seedFoods()]);
+    if ((await claimDevice(user.id)) === 'switched') await Promise.all([seedExercises(), seedFoods(), seedRecipes()]);
   } catch (err) {
     // Another account's unsynced data is on this device — don't mix accounts.
     const client = await getClient();
