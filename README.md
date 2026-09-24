@@ -8,6 +8,16 @@ No Mac, Xcode or App Store needed: build from Windows, deploy from GitHub, test 
 
 ## Status
 
+### Reset & shopping prices ✅
+- **Reset** on Today's workout: discard a workout in progress (with undo), or restart the programme rotation by picking
+  which routine is next — history is kept, and the rotation carries on in order after you do it.
+- **Price book for the shopping list:** tap **+ price** on any item and enter what it costs at your shop (Tesco, Aldi,
+  a local market…), optionally with the pack size so the list works out whole packs. Prices are remembered, so each
+  week's list adds itself up: total at each shop, how many items are priced there, and a **cheapest mix** (each item
+  where it's cheapest). Currency in *Nutrition → Shopping → Price book*.
+- These are **your** prices — UK supermarkets don't offer public price feeds, so the app never guesses live prices.
+- With sync on, run migration `0008_prices_and_reset.sql`.
+
 ### Friends & leaderboard ✅
 - **Groups** (*More → Friends*): start a group and tap **Invite** to send a link (or a 6-character code) to
   friends. Up to 50 people per group, and you can be in up to 10 groups. Leaving a group, or
@@ -188,7 +198,7 @@ Without this the app runs in **on-device mode** — everything works, data just 
 
 1. Create a free project at <https://supabase.com>.
 2. **SQL Editor** → paste and run each file in [`supabase/migrations/`](supabase/migrations/) in order
-   (`0001_init.sql` … `0007_friends.sql`). When a new phase adds a migration, run just the new file.
+   (`0001_init.sql` … `0008_prices_and_reset.sql`). When a new phase adds a migration, run just the new file.
    `0003` also creates the private `progress-photos` storage bucket (owner-only access).
 3. **Project Settings → API**: copy the *Project URL* and the *anon public* key.
 4. Add them as environment variables where you build:

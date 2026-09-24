@@ -7,7 +7,7 @@ import { Sheet } from '../../components/Sheet';
 import { useToast } from '../../components/Toast';
 import { TEMPLATES } from '../../db/seed/templates';
 import type { Profile, Routine } from '../../db/types';
-import { estimateMinutes, nextRoutine, workoutStats } from '../../lib/calc/training';
+import { estimateMinutes, nextRoutine, rotationOverride, workoutStats } from '../../lib/calc/training';
 import { relativeDay } from '../../lib/dates';
 import { formatWeight } from '../../lib/units';
 import { plural } from '../../lib/format';
@@ -24,7 +24,7 @@ export function WorkoutPage({ profile }: { profile: Profile }) {
   const [picking, setPicking] = useState(false);
 
   if (!t) return <main className="page" />;
-  const next = nextRoutine(t.routines, t.finished);
+  const next = nextRoutine(t.routines, t.finished, rotationOverride(profile));
   const recent = [...t.finished].reverse().slice(0, 5);
 
   async function start(routine: Routine | null) {

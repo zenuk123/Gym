@@ -1,17 +1,20 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Icon } from '../../../components/Icon';
 import type { Profile } from '../../../db/types';
-import { estimateMinutes, nextRoutine, suggestNext, workoutStats } from '../../../lib/calc/training';
+import { estimateMinutes, nextRoutine, rotationOverride, suggestNext, workoutStats } from '../../../lib/calc/training';
 import { formatWeight } from '../../../lib/units';
 import { plural } from '../../../lib/format';
 import { startWorkout } from '../../workout/actions';
 import { planContext, type Training } from '../../workout/useTraining';
+import { WorkoutResetSheet } from './WorkoutResetSheet';
 
 /** "What should I do today?" — resume, next routine with targets, or today's result. */
 export function WorkoutCard({ profile, t, today }: { profile: Profile; t: Training; today: string }) {
   const navigate = useNavigate();
+  const [resetting, setResetting] = useState(false);
   const u = profile.weightUnit;
-  const next = nextRoutine(t.routines, t.finished);
+  const next = nextRoutine(t.routines, t.finished, rotationOverride(profile));
   const doneToday = t.finished.filter((w) => w.date === today);
 
   const head = (
@@ -20,10 +23,17 @@ export function WorkoutCard({ profile, t, today }: { profile: Profile; t: Traini
         <Icon name="dumbbell" />
       </span>
       <h2>Today's workout</h2>
+      {(t.active || t.routines.length > 0) && (
+        <button className="head-link head-btn" onClick={() => setResetting(true)}>
+          <Icon name="undo" width={16} height={16} />
+          Reset
+        </button>
+      )}
       <Link className="head-link" to="/workout">
         Plan
         <Icon name="chevronRight" width={16} height={16} />
       </Link>
+      {resetting && <WorkoutResetSheet profile={profile} t={t} next={next} onClose={() => setResetting(false)} />}
     </div>
   );
 

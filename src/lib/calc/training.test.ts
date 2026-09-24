@@ -164,6 +164,19 @@ describe('scheduling & consistency', () => {
     expect(nextRoutine(rs, [workout('2026-01-01', {}, { routineId: 'legs' })])!.id).toBe('push');
   });
 
+  it('honours a reset until the next routine workout is finished', () => {
+    const rs = [routine('push', 0), routine('pull', 1), routine('legs', 2)];
+    const pull = workout('2026-01-01', {}, { routineId: 'pull' });
+    const reset = { routineId: 'push', setAt: pull.startedAt + 1 };
+    expect(nextRoutine(rs, [pull])!.id).toBe('legs');
+    expect(nextRoutine(rs, [pull], reset)!.id).toBe('push');
+    // After doing push (started later than the reset), rotation continues normally.
+    const push = workout('2026-01-02', {}, { routineId: 'push' });
+    expect(nextRoutine(rs, [pull, push], reset)!.id).toBe('pull');
+    // A reset pointing at a deleted routine is ignored.
+    expect(nextRoutine(rs, [pull], { routineId: 'gone', setAt: pull.startedAt + 1 })!.id).toBe('legs');
+  });
+
   it('estimates session length', () => {
     expect(estimateMinutes(routine('a', 0))).toBe(10); // 3×160s + 60s = 9 min → 10
   });

@@ -14,6 +14,7 @@ import {
   type SavedMeal,
   type ShoppingItem,
   type SleepLog,
+  type PriceEntry,
   type UserGoal,
   type WaterLog,
   type WeightEntry,
@@ -149,4 +150,9 @@ export function useShopping(weekStart: ISODate): ShoppingItem[] | undefined {
 /** Sleep logs, oldest first. */
 export function useSleep(): SleepLog[] | undefined {
   return useLiveQuery(async () => (await db.sleep.orderBy('date').toArray()).filter(alive));
+}
+
+/** Every saved price (price book). */
+export function usePrices(): PriceEntry[] | undefined {
+  return useLiveQuery(async () => (await db.prices.toArray()).filter(alive));
 }

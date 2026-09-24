@@ -41,6 +41,11 @@ export interface Profile extends SyncFields {
   workoutsPerWeek: number;
   weightUnit: WeightUnit;
   lengthUnit: LengthUnit;
+  /** "Reset" on Today: this routine is next until a routine workout is finished after `nextRoutineSetAt`. */
+  nextRoutineId?: string | null;
+  nextRoutineSetAt?: number | null;
+  /** ISO 4217 code for the price book (default GBP). */
+  currency?: string | null;
 }
 
 export interface WeightEntry extends SyncFields {
@@ -333,6 +338,22 @@ export interface SleepLog extends SyncFields {
   note: string | null;
 }
 
+// ── Price book ───────────────────────────────────────────────────────────
+
+/**
+ * What an item costs at a shop, entered by the user. `packG` is the pack size in grams/ml
+ * (so a list needing 900 g of a 500 g pack costs 2 packs); null = price per item as bought.
+ */
+export interface PriceEntry extends SyncFields {
+  /** `food:<foodId>` or `name:<normalised name>` — see lib/calc/prices.ts itemKey(). */
+  itemKey: string;
+  name: string;
+  shop: string;
+  price: number;
+  packG: number | null;
+  updatedOn: ISODate;
+}
+
 /** Local table name → record type, for every table that syncs. */
 export interface SyncTableMap {
   profile: Profile;
@@ -350,6 +371,7 @@ export interface SyncTableMap {
   planItems: PlanItem;
   shopping: ShoppingItem;
   sleep: SleepLog;
+  prices: PriceEntry;
 }
 export type SyncTable = keyof SyncTableMap;
 
@@ -370,6 +392,7 @@ export const REMOTE_TABLES: Record<SyncTable, string> = {
   planItems: 'plan_items',
   shopping: 'shopping_items',
   sleep: 'sleep_logs',
+  prices: 'prices',
 };
 
 export const SYNC_TABLES = Object.keys(REMOTE_TABLES) as SyncTable[];

@@ -15,6 +15,7 @@ import { FoodEditor, FoodsPage } from './features/nutrition/FoodsPage';
 import { MealEditor, MealsPage } from './features/nutrition/MealsPage';
 import { PlanPage } from './features/nutrition/PlanPage';
 import { ShoppingPage } from './features/nutrition/ShoppingPage';
+import { PricesPage } from './features/nutrition/PricesPage';
 import { OverviewPage } from './features/progress/OverviewPage';
 import { BodyPage } from './features/progress/BodyPage';
 import { GoalsPage } from './features/progress/GoalsPage';
@@ -77,7 +78,8 @@ export function App() {
             <Route path="/nutrition/meals" element={<MealsPage />} />
             <Route path="/nutrition/meals/:id" element={<MealEditor />} />
             <Route path="/nutrition/plan" element={<PlanPage profile={profile} />} />
-            <Route path="/nutrition/shopping" element={<ShoppingPage />} />
+            <Route path="/nutrition/shopping" element={<ShoppingPage profile={profile} />} />
+            <Route path="/nutrition/prices" element={<PricesPage profile={profile} />} />
             <Route path="/progress" element={<OverviewPage profile={profile} />} />
             <Route path="/progress/body" element={<BodyPage profile={profile} />} />
             <Route path="/progress/photos" element={<PhotosPage profile={profile} />} />

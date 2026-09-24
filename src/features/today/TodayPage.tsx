@@ -9,7 +9,7 @@ import { generateInsights } from '../../lib/insights';
 import { sumIntake } from '../../lib/intake';
 import { useToday } from '../../lib/useToday';
 import { daysBetween, startOfWeek } from '../../lib/dates';
-import { nextRoutine } from '../../lib/calc/training';
+import { nextRoutine, rotationOverride } from '../../lib/calc/training';
 import { useTraining } from '../workout/useTraining';
 import { CoachCard } from './cards/CoachCard';
 import { ConsistencyCard } from './cards/ConsistencyCard';
@@ -42,7 +42,7 @@ export function TodayPage({ profile }: { profile: Profile }) {
     const training = t && {
       daysSinceLast: t.finished.length ? daysBetween(t.finished.at(-1)!.date, today) : null,
       pbsThisWeek: t.pbs.filter((p) => p.date >= startOfWeek(today)).length,
-      nextRoutine: nextRoutine(t.routines, t.finished)?.name ?? null,
+      nextRoutine: nextRoutine(t.routines, t.finished, rotationOverride(profile))?.name ?? null,
       active: !!t.active,
     };
     return generateInsights({ profile, weight: summary, recentWeighIns, intake, hour: new Date().getHours(), training });

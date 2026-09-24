@@ -72,6 +72,11 @@ The owner has **no Mac** — never introduce Xcode, Swift or Mac-only tooling. N
   `onSynced`), only when the account is in a group; the last board is cached in `meta` for offline display.
 - `db/localData.ts → loadLocalData()` is the shared read-everything helper (coach tools + friends).
 
+## Reset & prices
+- Rotation reset = `Profile.nextRoutineId` + `nextRoutineSetAt`; always call `nextRoutine(routines, workouts, rotationOverride(profile))`.
+- Price book: `prices` table (user-entered, per item × shop, optional pack size). Maths in `lib/calc/prices.ts`
+  (`itemKey`, whole-pack `lineCost`, `shopTotals`, `bestMix`). Never present prices as live shop prices.
+
 ## UI conventions
 - Design for a 375–440 px wide iPhone first. Touch targets ≥ 44 px, inputs ≥ 16 px font (prevents iOS zoom).
 - Respect safe areas (`--safe-top`, `--safe-bottom`). Bottom nav is fixed; pages pad for it.

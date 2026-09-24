@@ -349,12 +349,24 @@ export function suggestNext({ sessions, repMin, repMax, incrementKg, unit, fmt }
 // ── Scheduling & consistency ─────────────────────────────────────────────
 
 /** Rotation: the routine after the one you did most recently (first routine if none yet). */
-export function nextRoutine(routines: Routine[], workouts: Workout[]): Routine | null {
+/** The rotation override stored on the profile (see `nextRoutine`). */
+export const rotationOverride = (p: { nextRoutineId?: string | null; nextRoutineSetAt?: number | null }) => ({ routineId: p.nextRoutineId ?? null, setAt: p.nextRoutineSetAt ?? null });
+
+/**
+ * Next routine in the rotation: the one after the last routine you finished.
+ * `override` (set by "Reset" on Today) pins the next routine until a routine workout is
+ * finished after it was set — then the normal rotation carries on from there.
+ */
+export function nextRoutine(routines: Routine[], workouts: Workout[], override?: { routineId: string | null; setAt: number | null } | null): Routine | null {
   const list = routines.filter((r) => r.deletedAt === null).sort((a, b) => a.sortOrder - b.sortOrder);
   if (list.length === 0) return null;
   const done = workouts
     .filter((w) => w.endedAt !== null && w.deletedAt === null && w.routineId)
     .sort((a, b) => b.startedAt - a.startedAt);
+  if (override?.routineId && override.setAt !== null && !(done[0] && done[0].startedAt > override.setAt)) {
+    const pinned = list.find((r) => r.id === override.routineId);
+    if (pinned) return pinned;
+  }
   for (const w of done) {
     const i = list.findIndex((r) => r.id === w.routineId);
     if (i >= 0) return list[(i + 1) % list.length];

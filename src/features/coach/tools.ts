@@ -8,7 +8,7 @@ import { SITE_LABEL, summariseMeasurements } from '../../lib/calc/measurements';
 import { dayTotals } from '../../lib/calc/plan';
 import { reviewText, weeklyReview } from '../../lib/calc/review';
 import { sleepVsTraining, summariseSleep } from '../../lib/calc/sleep';
-import { nextRoutine, suggestNext, weekStreak } from '../../lib/calc/training';
+import { nextRoutine, rotationOverride, suggestNext, weekStreak } from '../../lib/calc/training';
 import { summariseWeight } from '../../lib/calc/weight';
 import { addDays, daysBetween, startOfWeek, todayISO } from '../../lib/dates';
 import { formatWeight } from '../../lib/units';
@@ -76,7 +76,7 @@ export const TOOLS: ToolSpec[] = [
         lastWorkout: last ? { date: last.date, name: last.name, daysAgo: daysBetween(last.date, d.today) } : null,
         lastWeighIn: d.weights.at(-1) ? { date: d.weights.at(-1)!.date, kg: d.weights.at(-1)!.weightKg } : null,
         workoutStreakWeeks: weekStreak(d.finished, p.workoutsPerWeek, d.today),
-        nextRoutine: nextRoutine(d.routines, d.finished)?.name ?? null,
+        nextRoutine: nextRoutine(d.routines, d.finished, rotationOverride(d.profile))?.name ?? null,
         dataCounts: { weighIns: d.weights.length, workouts: d.finished.length, foodLogDays: new Set(d.foodLogs.map((l) => l.date)).size, sleepNights: d.sleep.length },
       };
     },

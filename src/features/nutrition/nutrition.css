@@ -252,3 +252,76 @@
   border-color: var(--success);
   color: #fff;
 }
+
+/* Price book */
+.price-btn {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  border-radius: 10px;
+  min-height: 44px;
+  min-width: 64px;
+  padding: 2px 10px;
+  font: inherit;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+.price-btn span {
+  font-size: 11px;
+  color: var(--text-3);
+}
+.price-btn.empty {
+  color: var(--text-3);
+  font-weight: 600;
+  align-items: center;
+  border-style: dashed;
+}
+.shop-row.done .price-btn {
+  opacity: 0.5;
+}
+.price-total {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.price-compare {
+  display: flex;
+  flex-direction: column;
+}
+.price-compare-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 36px;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.price-compare-row + .price-compare-row {
+  border-top: 1px solid var(--border);
+}
+.price-compare-row.best span:first-child {
+  color: var(--accent-text);
+  font-weight: 600;
+}
+.price-item {
+  gap: 4px;
+}
+.price-line {
+  appearance: none;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  min-height: 44px;
+  padding: 0;
+  width: 100%;
+}
