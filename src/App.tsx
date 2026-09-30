@@ -36,12 +36,15 @@ import { AppearanceSettings } from './features/more/AppearanceSettings';
 import { AboutPage } from './features/more/AboutPage';
 import { ReviewPage } from './features/review/ReviewPage';
 import { AiSettingsPage } from './features/coach/AiSettingsPage';
-import { HealthImportPage } from './features/more/HealthImportPage';
+import { HealthImportPage } from './features/more/health/HealthImportPage';
+import { DevicesPage } from './features/more/devices/DevicesPage';
+import { NativeReminderTaps } from './features/more/devices/NativeReminderTaps';
 import { FriendsPage } from './features/friends/FriendsPage';
 
 // The coach pulls in the Anthropic SDK, so it loads only when opened.
 const CoachPage = lazy(() => import('./features/coach/CoachPage').then((m) => ({ default: m.CoachPage })));
 import { UpdatePrompt } from './pwa/UpdatePrompt';
+import { isNative } from './pwa/platform';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -57,7 +60,9 @@ export function App() {
   return (
     <>
       <div className="status-scrim" />
-      <UpdatePrompt />
+      {/* The native app ships its web files inside the app, so there's no service worker to update. */}
+      {!isNative() && <UpdatePrompt />}
+      {isNative() && <NativeReminderTaps />}
       {profile === undefined ? (
         <div className="boot-splash" aria-hidden="true" />
       ) : profile === null ? (
@@ -103,6 +108,7 @@ export function App() {
             <Route path="/more/review" element={<ReviewPage profile={profile} />} />
             <Route path="/more/ai" element={<AiSettingsPage />} />
             <Route path="/more/health" element={<HealthImportPage profile={profile} />} />
+            <Route path="/more/devices" element={<DevicesPage />} />
             <Route path="/more/friends" element={<FriendsPage profile={profile} />} />
             <Route
               path="/more/coach"

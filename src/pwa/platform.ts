@@ -6,9 +6,26 @@ export function isIOS(): boolean {
   return /iPhone|iPad|iPod/.test(ua) || (ua.includes('Macintosh') && navigator.maxTouchPoints > 1);
 }
 
-/** True when launched from the Home Screen (no Safari chrome). */
+type NativeBridge = { isNativePlatform?: () => boolean; getPlatform?: () => string };
+
+/**
+ * True inside the Capacitor wrapper (README §5). The native shell injects `window.Capacitor`,
+ * so this needs no import and keeps the Capacitor packages out of the web bundle.
+ */
+export function isNative(): boolean {
+  const cap = (globalThis as { Capacitor?: NativeBridge }).Capacitor;
+  return !!cap?.isNativePlatform?.();
+}
+
+export function nativePlatform(): 'ios' | 'android' | 'web' {
+  if (!isNative()) return 'web';
+  return (globalThis as { Capacitor?: NativeBridge }).Capacitor?.getPlatform?.() === 'android' ? 'android' : 'ios';
+}
+
+/** True when launched from the Home Screen (no Safari chrome) — or running as the native app. */
 export function isStandalone(): boolean {
   return (
+    isNative() ||
     window.matchMedia('(display-mode: standalone)').matches ||
     (navigator as Navigator & { standalone?: boolean }).standalone === true
   );

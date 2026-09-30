@@ -46,6 +46,8 @@ export default defineConfig(({ mode }) => {
           // First install takes control straight away (so the very first visit is already
           // offline-capable). Updates still wait for the user to tap "Update".
           clientsClaim: true,
+          // Web Push reminders (public/push-sw.js).
+          importScripts: ['push-sw.js'],
         },
         devOptions: { enabled: false },
       }),

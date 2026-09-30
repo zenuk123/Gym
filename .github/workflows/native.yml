@@ -1,0 +1,140 @@
+# Native app builds (README §5) — no Mac needed: GitHub's hosted runners do the work.
+#
+# Run it from the Actions tab → "Native apps" → Run workflow (it never runs on its own, so it
+# doesn't use up macOS minutes).
+#
+#   Android  always: a debug APK you can install on an Android phone (download the artifact).
+#            with signing secrets: a signed release .aab for Google Play too.
+#   iOS      always: compiles the app for the simulator (proves the native project builds).
+#            with signing secrets: archives, signs and uploads to TestFlight — install it
+#            from the TestFlight app on your iPhone.
+#
+# Repository variables (Settings → Secrets and variables → Actions → Variables):
+#   APP_ID                 your bundle id, e.g. com.yourname.fitnessos (required for iOS uploads)
+# Secrets:
+#   VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY   optional, same as the web build (cloud sync)
+#   iOS:     APPLE_TEAM_ID, ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (App Store Connect API key, Admin role)
+#   Android: ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+name: Native apps
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Which app to build
+        type: choice
+        options: [both, ios, android]
+        default: both
+
+permissions:
+  contents: read
+
+env:
+  APP_ID: ${{ vars.APP_ID || 'com.example.fitnessos' }}
+  BUILD_NUMBER: ${{ github.run_number }}
+  VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+  VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+jobs:
+  android:
+    if: ${{ inputs.platform != 'ios' }}
+    runs-on: ubuntu-latest
+    env:
+      HAS_SIGNING: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npx cap add android
+      - run: node scripts/native/prepare.mjs
+      - run: npx cap sync android
+      - name: Debug APK
+        working-directory: android
+        run: ./gradlew --no-daemon assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fitness-os-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+      - name: Signed release (Play Store)
+        if: ${{ env.HAS_SIGNING == 'true' }}
+        working-directory: android
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/release.jks"
+          ./gradlew --no-daemon bundleRelease \
+            -Pandroid.injected.signing.store.file="$RUNNER_TEMP/release.jks" \
+            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
+          rm "$RUNNER_TEMP/release.jks"
+      - if: ${{ env.HAS_SIGNING == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: fitness-os-release-aab
+          path: android/app/build/outputs/bundle/release/*.aab
+
+  ios:
+    if: ${{ inputs.platform != 'android' }}
+    runs-on: macos-latest
+    env:
+      HAS_SIGNING: ${{ secrets.ASC_KEY_P8 != '' && secrets.APPLE_TEAM_ID != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx cap add ios
+      - run: node scripts/native/prepare.mjs
+      - run: npx cap sync ios
+      - name: Compile for the simulator (no signing)
+        if: ${{ env.HAS_SIGNING != 'true' }}
+        run: |
+          set -o pipefail
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build | tail -n 40
+      - name: Archive, sign and upload to TestFlight
+        if: ${{ env.HAS_SIGNING == 'true' }}
+        env:
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          set -o pipefail
+          KEY="$RUNNER_TEMP/AuthKey_$ASC_KEY_ID.p8"
+          printf '%s' "$ASC_KEY_P8" > "$KEY"
+          AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$KEY" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGN_STYLE=Automatic "${AUTH[@]}" archive | tail -n 40
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$TEAM_ID</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          EOF
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" -exportPath "$RUNNER_TEMP/export" "${AUTH[@]}" | tail -n 40
+          rm "$KEY"
+          echo "Uploaded build $BUILD_NUMBER — it appears in TestFlight after Apple finishes processing (usually 5–30 minutes)."

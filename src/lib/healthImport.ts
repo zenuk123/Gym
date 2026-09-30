@@ -20,7 +20,7 @@ export interface HealthNight {
   source: string;
 }
 
-interface Segment {
+export interface Segment {
   start: Date;
   end: Date;
   asleep: boolean;

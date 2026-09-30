@@ -20,10 +20,10 @@ const browser = await chromium.launch(
 );
 const page = await browser.newPage();
 
-async function render(html, width, height, out) {
+async function render(html, width, height, out, transparent = false) {
   await page.setViewportSize({ width, height });
-  await page.setContent(`<html><body style="margin:0">${html}</body></html>`);
-  await page.screenshot({ path: out, omitBackground: false });
+  await page.setContent(`<html><body style="margin:0;background:transparent">${html}</body></html>`);
+  await page.screenshot({ path: out, omitBackground: transparent });
   console.log('wrote', out);
 }
 
@@ -45,6 +45,32 @@ for (const [w, h] of SPLASHES) {
     <img src="${svgUri}" style="width:${logo}px;height:${logo}px;border-radius:${Math.round(logo * 0.22)}px"/>
     <div style="color:#e8ecf1;font-size:${Math.round(w * 0.06)}px;font-weight:700;letter-spacing:-0.02em">Fitness OS</div></div>`;
   await render(html, w, h, join(root, `public/splash/splash-${w}x${h}.png`));
+}
+
+// Native wrapper (README §5): scripts/native/prepare.mjs copies these into the generated projects.
+const res = join(root, 'resources');
+mkdirSync(join(res, 'ios'), { recursive: true });
+await render(icon(1024), 1024, 1024, join(res, 'ios/AppIcon-1024.png')); // opaque: the App Store rejects alpha
+{
+  const logo = 560;
+  await render(
+    `<div style="width:2732px;height:2732px;background:#0b0d10;display:flex;align-items:center;justify-content:center">
+       <img src="${svgUri}" style="width:${logo}px;height:${logo}px;border-radius:${Math.round(logo * 0.22)}px"/></div>`,
+    2732, 2732, join(res, 'ios/splash-2732.png'),
+  );
+}
+// Android launcher icons: legacy square + round, and the adaptive-icon foreground (108 dp canvas,
+// artwork centred so the dumbbell sits inside the 66 dp safe zone).
+const DENSITIES = { mdpi: 1, hdpi: 1.5, xhdpi: 2, xxhdpi: 3, xxxhdpi: 4 };
+for (const [d, k] of Object.entries(DENSITIES)) {
+  const dir = join(res, `android/mipmap-${d}`);
+  mkdirSync(dir, { recursive: true });
+  const s = Math.round(48 * k);
+  await render(icon(s), s, s, join(dir, 'ic_launcher.png'));
+  await render(`<div style="width:${s}px;height:${s}px;border-radius:50%;overflow:hidden">${icon(s)}</div>`, s, s, join(dir, 'ic_launcher_round.png'), true);
+  const f = Math.round(108 * k);
+  const art = Math.round(96 * k); // the icon's own dark square overfills the mask; the glyph stays in the safe zone
+  await render(`<div style="width:${f}px;height:${f}px;display:flex;align-items:center;justify-content:center"><img src="${svgUri}" style="width:${art}px;height:${art}px"/></div>`, f, f, join(dir, 'ic_launcher_foreground.png'), true);
 }
 
 await browser.close();

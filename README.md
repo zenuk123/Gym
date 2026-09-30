@@ -5,6 +5,8 @@ A personal fitness operating system — training, nutrition and progress — bui
 runs full-screen like a native app, and works offline in the gym.
 
 No Mac, Xcode or App Store needed: build from Windows, deploy from GitHub, test on your iPhone.
+When you want live Apple Health sync, the same app is also wrapped as a native iPhone / Android app,
+built in the cloud by GitHub Actions (§5) — still no Mac.
 
 ## Status
 
@@ -74,15 +76,31 @@ No Mac, Xcode or App Store needed: build from Windows, deploy from GitHub, test 
   Leaving your last group deletes everything you shared.
 - Needs cloud accounts (§3): every friend creates their own account in the same app. Run migration `0007_friends.sql`.
 
-### Phase 7 — Integrations (PWA-friendly parts) ✅
+### Phase 7 — Integrations: native app, live Health, wearables, reminders ✅
+Everything lives under *More → Health & devices*.
+- **Native app, no Mac** (§5): the same React app wrapped with Capacitor. GitHub Actions builds it on hosted
+  runners — an installable Android APK every time, and a signed iPhone build uploaded to **TestFlight** once your
+  Apple Developer secrets are added. The repo holds no Xcode project: it's generated and patched in the cloud.
+- **Live Apple Health / Health Connect** (native app): tap *Connect Apple Health* once; weight and sleep (with
+  Apple Watch stages) then come in automatically whenever you open the app — a year of history first, then new days.
+  Read-only, only days you haven't logged, never overwrites. Android uses Health Connect the same way.
+- **Wearables**: **Withings** (scales, Sleep Analyzer), **Oura** and **Fitbit** connect through your own Supabase
+  server (`wearables` Edge Function) — the login tokens stay on the server, never on the phone. Weight and sleep
+  are pulled in on demand and automatically every few hours. Garmin, Whoop, Samsung and most others already
+  write to Apple Health / Health Connect, so they arrive through the native app.
+- **Reminders**: morning weigh-in, training days (pick the days), log today's food, weekly review — each with its
+  own time. The native app schedules them on the phone (works offline); the Home Screen web app gets them as
+  **Web Push** (iOS 16.4+) from the `push` Edge Function, encrypted end-to-end. Reminders never change your plan.
+- Migration `0011_devices.sql` (only needed for wearables and web-push reminders).
+
+#### Earlier Phase 7 work
 - **Barcode scanner** (Nutrition → Add → scan): uses the camera with the built-in `BarcodeDetector` where available
   and a bundled decoder otherwise, looks the product up on Open Food Facts, and lets you type the number when offline.
 - **Apple Health import** (*More → Data & backup → Import from Apple Health*): reads the Health app's
   "Export All Health Data" file **on the phone** (never uploaded) and adds your weight history and sleep, including
   Apple Watch sleep stages, for days you haven't logged. One weigh-in per day, one night per wake-up date,
   no double counting when both the phone and the watch recorded a night, and nothing is overwritten.
-- **Native app, live HealthKit sync, Health Connect and wearables** stay deliberately out of the PWA — see
-  [§5](#5-later-a-native-wrapper-still-no-mac) for the path, which still needs no Mac.
+- In the native app, *Health & devices* replaces the file import with live sync; the web app keeps the file import.
 
 ### Phase 6 — AI coach, weekly review, sleep ✅
 - **AI coach** (*More → AI coach*): chat with Claude about **your own data**. It uses read-only tools to look up
@@ -185,7 +203,7 @@ No Mac, Xcode or App Store needed: build from Windows, deploy from GitHub, test 
 - Data ownership: JSON backup/restore, CSV export, erase
 - Dark mode (default), light mode, kg/lb, cm/ft-in
 
-All seven phases are in place. What's left is the optional native wrapper (§5).
+All seven phases are complete, including the native app, live Health sync, wearables and reminders (§5).
 
 ---
 
@@ -241,7 +259,7 @@ Without this the app runs in **on-device mode** — everything works, data just 
 
 1. Create a free project at <https://supabase.com>.
 2. **SQL Editor** → paste and run each file in [`supabase/migrations/`](supabase/migrations/) in order
-   (`0001_init.sql` … `0010_food_prefs.sql`). When a new phase adds a migration, run just the new file.
+   (`0001_init.sql` … `0011_devices.sql`). When a new phase adds a migration, run just the new file.
    `0003` also creates the private `progress-photos` storage bucket (owner-only access).
 3. **Project Settings → API**: copy the *Project URL* and the *anon public* key.
 4. Add them as environment variables where you build:
@@ -276,27 +294,95 @@ supabase functions deploy claude
 
 Then pick *More → AI settings → My server* in the app (it appears once cloud sync is configured and you're signed in).
 
-## 5. Later: a native wrapper (still no Mac)
+## 5. Native app, live Health, wearables & reminders (still no Mac)
 
-The PWA covers everything in the spec except things iOS only allows native apps to do: **live** HealthKit
-read/write, Apple Watch apps, widgets, and reliable background notifications. When the PWA has been stable for a
-while, the plan is:
+Everything here is optional — the PWA keeps working on its own.
 
-1. **Wrap, don't rewrite.** Add [Capacitor](https://capacitorjs.com) around the existing `dist/` build
-   (`npm i @capacitor/core @capacitor/ios && npx cap add ios`). The React app, IndexedDB data layer, sync engine and
-   Supabase backend stay as they are; native features become small plugins behind the same interfaces
-   (e.g. a `HealthSource` that the Apple Health import already defines the shape of: weigh-ins + nights).
-2. **Build in the cloud.** Xcode only runs on macOS, but hosted macOS builders do it for you from GitHub:
-   GitHub Actions `macos-latest` runners, Codemagic or Ionic Appflow. They sign the app and upload it to
-   TestFlight, so installing it on the iPhone happens through the TestFlight app. Code signing needs an
-   **Apple Developer Program** membership (paid, yearly) — that's the only new requirement.
-3. **HealthKit.** A HealthKit plugin replaces the file import with live reads of body mass and sleep analysis
-   (and could write workouts back). The app must request each permission, and Apple reviews HealthKit usage.
-4. **Android later.** The same wrapper with `@capacitor/android` and a Health Connect plugin covers Android.
-5. **Wearables** (Garmin, Oura, Whoop …) use OAuth web APIs. Those belong in Supabase Edge Functions (tokens stay
-   server-side) that write into the same tables, so the app needs no changes to show the data.
+### 5a. The native app (Capacitor, built in the cloud)
 
-Until then, the PWA keeps working offline, installs from Safari, and imports Apple Health data by file.
+The native app is the same `dist/` build inside a thin [Capacitor](https://capacitorjs.com) shell
+(`capacitor.config.ts`). It adds what iOS only allows native apps: **live Apple Health**, and on-device reminders.
+Xcode only runs on macOS, so GitHub's hosted macOS runners do that part; the repo contains no Xcode project —
+[`.github/workflows/native.yml`](.github/workflows/native.yml) generates it with `npx cap add`, and
+[`scripts/native/prepare.mjs`](scripts/native/prepare.mjs) patches it (HealthKit entitlement and permission text,
+portrait only, icons from `resources/`, version numbers; on Android: Health Connect permissions trimmed to weight +
+sleep, min SDK 26).
+
+**Android (free):** GitHub → **Actions → Native apps → Run workflow** (platform *android*). Download the
+`fitness-os-debug-apk` artifact and open it on the phone. Add the `ANDROID_KEYSTORE_*` secrets (see the workflow
+header) to also get a signed `.aab` for Google Play.
+
+**iPhone (needs the paid, yearly Apple Developer Program membership):**
+1. Enrol at <https://developer.apple.com/programs/> (Windows is fine — use the Apple Developer app on the iPhone).
+2. **Certificates, Identifiers & Profiles → Identifiers → +**: an App ID such as `com.yourname.fitnessos`, and tick
+   **HealthKit**.
+3. **App Store Connect → Apps → +**: a new iOS app with that bundle id (the name must be unique on the store;
+   it's only visible to you in TestFlight).
+4. **App Store Connect → Users and Access → Integrations → App Store Connect API → +**: a key with the
+   **Admin** role (it lets the build create signing certificates in the cloud). Download the `.p8` once.
+5. GitHub → **Settings → Secrets and variables → Actions**:
+   - variable `APP_ID` = your bundle id;
+   - secrets `APPLE_TEAM_ID` (Membership page), `ASC_KEY_ID`, `ASC_ISSUER_ID` (from step 4) and `ASC_KEY_P8`
+     (the whole `.p8` file's text);
+   - the same `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` as your web build if you use cloud sync.
+6. **Actions → Native apps → Run workflow** (platform *ios*). About 10–15 minutes later the build appears in
+   App Store Connect; install **TestFlight** from the App Store on the iPhone and install Fitness OS from there.
+   Run the workflow again whenever you want a new version (TestFlight builds last 90 days).
+
+Without the secrets, the iOS job still compiles the app for the simulator, which proves the native project builds.
+Your data: the native app has its own on-device database. Sign in to the same account (§3) and it syncs with the
+web app; or export a backup from one and restore it in the other.
+
+### 5b. Live Apple Health / Health Connect
+
+In the native app: *More → Health & devices → Connect Apple Health* (Health Connect on Android). It reads body
+weight and sleep analysis only, via the `@capgo/capacitor-health` plugin, and imports days you haven't logged —
+the same rules as the file import. It checks again whenever the app comes to the front (at most every 30 minutes).
+Nothing is written to Health. Change access later in *Settings → Health → Data Access & Devices*.
+
+### 5c. Wearables (Withings, Oura, Fitbit)
+
+Needs cloud sync (§3) and the `wearables` Edge Function. The OAuth tokens live in `wearable_links`, which the app
+itself can't read; the function returns plain weigh-ins and nights and the phone saves them like anything you type.
+
+1. Run migration `0011_devices.sql`.
+2. Register a developer app with each provider you want — Withings (<https://developer.withings.com>), Oura
+   (<https://cloud.ouraring.com/oauth/applications>), Fitbit (<https://dev.fitbit.com/apps>, type *Personal*) — with
+   the redirect / callback URL `https://<project-ref>.supabase.co/functions/v1/wearables`.
+3. Deploy:
+   ```bash
+   supabase secrets set WITHINGS_CLIENT_ID=... WITHINGS_CLIENT_SECRET=... OURA_CLIENT_ID=... OURA_CLIENT_SECRET=... \
+     FITBIT_CLIENT_ID=... FITBIT_CLIENT_SECRET=... ALLOWED_ORIGIN=https://your-app.vercel.app
+   supabase functions deploy wearables --no-verify-jwt   # the OAuth callback has no Supabase login; the function checks users itself
+   ```
+4. In the app: *More → Health & devices → Wearables → Connect*. After you approve access you land back in the app
+   and the first sync (up to a year) runs.
+
+Garmin's API is for approved business partners only, and Whoop, Samsung, Polar and Google devices sync into Apple
+Health or Health Connect — use the native app (§5b) for those.
+
+### 5d. Reminders
+
+*More → Health & devices → Reminders*. In the **native app** they're scheduled on the phone — nothing else to set up.
+In the **Home Screen web app** (iOS 16.4+, or any browser with Web Push) they come from the `push` Edge Function:
+
+1. Run migration `0011_devices.sql` and sign in (§3).
+2. `node scripts/vapid-keys.mjs` prints a `supabase secrets set …` line — run it (set `VAPID_SUBJECT` to your email).
+3. `supabase functions deploy push --no-verify-jwt`
+4. Schedule it every 5 minutes (SQL Editor; enable the **pg_cron** and **pg_net** extensions first under
+   *Database → Extensions*):
+   ```sql
+   select cron.schedule('fitness-os-reminders', '*/5 * * * *', $$
+     select net.http_post(
+       url := 'https://<project-ref>.supabase.co/functions/v1/push',
+       headers := '{"Content-Type": "application/json", "Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
+       body := '{"action": "run"}'::jsonb)
+   $$);
+   ```
+5. In the app, switch a reminder on and allow notifications, then tap **Send a test**.
+
+A reminder is sent at most once a day, within an hour of its time (a missed run never sends it hours late).
+Messages are encrypted for your phone (RFC 8291), so Apple's push service can't read them.
 
 ---
 
@@ -331,11 +417,15 @@ src/
   components/  shared UI: BottomNav, Sheet, NumberField, LineChart, Toast, …
   features/    onboarding/, today/, workout/ (hub, routines, library, history, gym/ = Gym Mode), nutrition/,
                progress/ (overview, body, goals, analytics, photos/, sleep/), review/ (weekly review),
-               coach/ (AI coach chat, read-only data tools, meal ideas, AI settings), friends/ (groups, leaderboard), more/
+               coach/ (AI coach chat, read-only data tools, meal ideas, AI settings), friends/ (groups, leaderboard),
+               more/ (settings; health/ = Apple Health import + live sync; devices/ = wearables + reminders)
   components/charts/  BarChart, MeterList, StackBar, ChartTable (+ components/LineChart)
   styles/      tokens.css (colours, dark/light), base, layout, components
 supabase/migrations/   cloud schema
 supabase/functions/claude/   optional Claude proxy (keeps the API key server-side)
+supabase/functions/wearables/  Withings / Oura / Fitbit OAuth + sync (tokens stay server-side)
+supabase/functions/push/       Web Push reminders (cron-driven); _shared/ holds pure code the app tests too
+capacitor.config.ts, scripts/native/, resources/   native wrapper (generated + patched in CI, §5)
 tools/shop_to_cart/   Python script: exported shopping list → supermarket basket (runs on a computer)
 scripts/generate-icons.mjs   regenerates icons + iOS splash screens from public/icons/icon.svg
 ```
@@ -350,8 +440,8 @@ scripts/generate-icons.mjs   regenerates icons + iOS splash screens from public/
 | Storage | Home Screen apps are exempt from Safari's 7-day storage cap; we also request persistent storage |
 | Background Sync API | ❌ not on iOS → syncs on open / reconnect / foreground instead |
 | Vibration | ❌ not on iOS → silently skipped (works on Android) |
-| Push notifications | iOS 16.4+ for installed apps only — planned for later |
-| Apple Health | No web API — import the Health export file (weight + sleep); live sync needs the native wrapper (§5) |
+| Push notifications | iOS 16.4+ Home Screen apps: reminders via Web Push (§5d); the native app schedules them on the phone |
+| Apple Health | No web API — import the Health export file (weight + sleep); the native app syncs live (§5b) |
 | Camera (barcode) | ✅ `getUserMedia`; the camera permission is asked the first time you scan |
 | Screen wake lock | Used in Gym Mode where supported (recent iOS Home Screen apps); otherwise the screen may dim |
 | Rest-timer alert | Beep plays when the app is open; iOS can't run timers in the background, so if you lock the phone the timer is correct when you return but won't alert |
@@ -367,4 +457,4 @@ To regenerate icons after editing `public/icons/icon.svg`:
 4. **Nutrition** — food database, custom foods, saved meals, meal history ✅
 5. **Meal prep** — weekly planner, shopping lists, AI meal generator ✅
 6. **AI coach** — questions over your own data, AI meal generator, weekly review, sleep ✅
-7. **Integrations** — barcode scanner ✅, Apple Health import ✅; native wrapper, live HealthKit / Health Connect and wearables once the PWA is stable (§5)
+7. **Integrations** — barcode scanner, Apple Health import, native app (cloud-built), live HealthKit / Health Connect, wearables, reminders ✅

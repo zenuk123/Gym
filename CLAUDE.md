@@ -60,8 +60,24 @@ The owner has **no Mac** — never introduce Xcode, Swift or Mac-only tooling. N
 - Apple Health: `lib/healthImport.ts` streams the Health `export.xml` (can be hundreds of MB — never read it whole)
   and returns weigh-ins + nights; `features/more/HealthImportPage.tsx` imports only dates not already logged,
   via `repo.createMany` (one transaction, still queued for sync).
-- Native wrapper, live HealthKit / Health Connect and wearables are future work (README §5): Capacitor + cloud
-  macOS builds, never local Xcode.
+- Shared health shape: `lib/healthData.ts` (`fromNativeSamples`, `freshOnly`); every source imports through
+  `features/more/health/importHealth.ts → importHealthData` (only unlogged days; deleted days count as logged).
+
+## Native app, wearables & reminders (Phase 7, README §5)
+- Capacitor wraps `dist/`. **Never commit `ios/` or `android/`** — `.github/workflows/native.yml` runs `cap add` and
+  `scripts/native/prepare.mjs` (plist/entitlements/pbxproj/manifest patches, icons from `resources/`) in the cloud.
+  Change native settings in `prepare.mjs`, regenerate icons with `npm run icons`.
+- Detect the shell with `pwa/platform.ts → isNative()` (no import). Capacitor plugins are loaded with `import()` only
+  inside native code paths, and helpers must return the **module**, never the plugin proxy from an async function
+  (a proxy resolving a promise triggers a bogus native `.then` call).
+- Live Health: `features/more/health/nativeHealth.ts` (read weight + sleep only, never write).
+- Wearables: `supabase/functions/wearables` (OAuth, tokens in `wearable_links` which clients can't read);
+  pure normalisers in `supabase/functions/_shared/wearables.ts`. Client: `features/more/devices/wearablesApi.ts`.
+- Reminders: settings in local `meta` (not synced). Native → LocalNotifications; PWA → Web Push
+  (`push_subscriptions`, `supabase/functions/push`, `public/push-sw.js` imported by the Workbox SW).
+  `_shared/reminders.ts` + `_shared/webpush.ts` (WebCrypto-only RFC 8291/8292) are shared with the app and tested.
+- `supabase/functions/_shared/*` is included in `tsconfig.app.json`: keep it import-free and Deno-compatible.
+  Call Edge Functions from the app via `sync/functions.ts → invokeFunction`.
 
 ## Friends
 - Social data lives only in Supabase (`0007_friends.sql`), not in Dexie sync tables. Group reads are gated by RLS

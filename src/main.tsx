@@ -4,6 +4,9 @@ import { BrowserRouter } from 'react-router-dom';
 import { App } from './App';
 import { ToastProvider } from './components/Toast';
 import { applyTheme, watchSystemTheme } from './lib/theme';
+import { autoSyncWearables } from './features/more/devices/wearablesApi';
+import { startHealthAutoSync } from './features/more/health/nativeHealth';
+import { isNative } from './pwa/platform';
 import { requestPersistentStorage } from './pwa/storage';
 import { onSynced, startSync } from './sync/manager';
 import { seedExercises } from './db/seed/exercises';
@@ -23,6 +26,12 @@ void seedRecipes().catch((err) => console.warn('Recipe library seed failed', err
 void startSync().catch((err) => console.warn('Sync failed to start', err));
 // Keep the summary friends see up to date (only if you're in a group; loaded on demand).
 onSynced((userId) => void import('./features/friends/api').then((m) => m.publishIfEnabled(userId)).catch(() => {}));
+// Connected wearables (Withings / Oura / Fitbit) catch up at most every few hours.
+onSynced(() => void autoSyncWearables().catch(() => {}));
+// Native app only (README §5): live Apple Health / Health Connect sync.
+if (isNative()) {
+  startHealthAutoSync();
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

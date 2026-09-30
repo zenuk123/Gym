@@ -47,6 +47,7 @@ export function MorePage({ profile }: { profile: Profile }) {
         />
         <Row to="/progress/goals" icon="trophy" tone="var(--pb)" title="Goals" desc="Weight, strength & measurement goals" />
         <Row to="/more/friends" icon="user" tone="var(--streak)" title="Friends" desc="Groups, leaderboard & shared progress" />
+        <Row to="/more/devices" icon="heart" tone="var(--danger)" title="Health & devices" desc="Apple Health, wearables & reminders" />
       </div>
 
       <h2 className="section-title">Coach</h2>

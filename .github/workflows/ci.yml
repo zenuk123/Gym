@@ -17,3 +17,5 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      # Supabase Edge Functions are Deno code: type-check them too.
+      - run: npx --yes deno@2 check supabase/functions/claude/index.ts supabase/functions/wearables/index.ts supabase/functions/push/index.ts

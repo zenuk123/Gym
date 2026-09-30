@@ -1,0 +1,52 @@
+.device-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: 6px 0;
+  border-top: 1px solid var(--border);
+}
+.device-row:first-child {
+  border-top: 0;
+}
+.device-row .title {
+  font-weight: 600;
+}
+.device-row .desc {
+  color: var(--text-2);
+  font-size: 13px;
+}
+.device-row .chip {
+  min-height: 44px;
+  flex: none;
+}
+
+.reminder {
+  border-top: 1px solid var(--border);
+  padding: 4px 0;
+}
+.reminder:first-of-type {
+  border-top: 0;
+}
+.reminder-when {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 0 0 10px 34px;
+}
+.reminder-when .input-wrap.time {
+  width: 150px;
+  flex: none;
+}
+.day-chips {
+  display: flex;
+  gap: 4px;
+}
+.day-chips .chip {
+  width: 36px;
+  min-width: 36px;
+  min-height: 44px;
+  padding: 0;
+  justify-content: center;
+}
