@@ -11,6 +11,7 @@ import { recentFoods } from '../../lib/calc/food';
 import { planMeal } from '../../lib/calc/plan';
 import { formatDateShort, todayISO } from '../../lib/dates';
 import { formatInt } from '../../lib/format';
+import { prefsSummary } from '../../lib/calc/foodPrefs';
 import { sumIntake } from '../../lib/intake';
 import { addPlanItem } from '../nutrition/planActions';
 import { MEALS } from '../nutrition/QuickAddSheet';
@@ -30,7 +31,7 @@ export function MealIdeasSheet({ profile, date, initialKind = 'meal', initialSlo
   const todayLogs = useFoodLogs(date);
   const [kind, setKind] = useState<Kind>(initialKind);
   const [slot, setSlot] = useState<MealSlot>(initialSlot);
-  const [prefs, setPrefs] = useState('');
+  const [prefs, setPrefs] = useState(() => (profile.foodPrefs?.answeredAt ? prefsSummary(profile.foodPrefs) : ''));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ideas, setIdeas] = useState<MealIdea[] | null>(null);

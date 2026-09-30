@@ -129,6 +129,27 @@ const DEFS: Def[] = [
   ['Cola', 'other', 42, 0, 10.6, 0, 0, 330, '1 can', 'ml'],
   ['Lager', 'other', 43, 0.5, 3.6, 0, 0, 568, '1 pint', 'ml'],
   ['Latte (semi-skimmed)', 'other', 44, 3, 4.4, 1.6, 0, 350, '1 medium', 'ml'],
+  // Added with the larger recipe library (typical UK values)
+  ['Turkey breast steak (raw)', 'meat', 105, 24, 0, 1, 0, 125, '1 steak'],
+  ['Smoked salmon', 'meat', 184, 23, 0, 10, 0, 60, '½ pack'],
+  ['Mackerel in tomato sauce (canned)', 'meat', 200, 15, 3, 14, 0, 125, '1 can'],
+  ['Chorizo', 'meat', 455, 24, 2, 39, 0, 20, '4 slices'],
+  ['Halloumi', 'dairy', 321, 21, 2.2, 25, 0, 50, '2 slices'],
+  ['Paneer', 'dairy', 296, 19, 3.6, 23, 0, 100, '½ pack'],
+  ['Parmesan', 'dairy', 392, 36, 0, 27, 0, 10, '1 tbsp grated'],
+  ['Light soft cheese', 'dairy', 157, 7.4, 4.2, 12, 0, 30, '1 tbsp'],
+  ['Frozen mixed berries', 'fruit', 40, 1, 6, 0.3, 3, 80, '1 handful'],
+  ['Edamame beans (frozen)', 'vegetables', 121, 11, 8, 5, 5, 80, '1 portion'],
+  ['Black beans (canned, drained)', 'vegetables', 132, 8.9, 23.7, 0.5, 8.7, 120, '½ can'],
+  ['Butternut squash', 'vegetables', 45, 1, 11.7, 0.1, 2, 150, '1 portion'],
+  ['Wholemeal pasta (dry)', 'carbs', 348, 13, 64, 2.5, 9, 75, '1 portion'],
+  ['Rice noodles (dry)', 'carbs', 364, 6, 80, 1, 1.6, 65, '1 nest'],
+  ['Pitta bread', 'carbs', 265, 9, 53, 1.2, 2.2, 60, '1 pitta'],
+  ['Soy sauce', 'other', 60, 8.1, 5.6, 0.1, 0, 15, '1 tbsp', 'ml'],
+  ['Green pesto', 'other', 430, 5, 5, 43, 1.5, 30, '2 tbsp'],
+  ['Tomato salsa', 'other', 30, 1.3, 5.5, 0.2, 1.3, 50, '2 tbsp'],
+  ['Curry paste (tikka)', 'other', 130, 2, 10, 9, 3, 30, '2 tbsp'],
+  ['Coconut milk, light (canned)', 'other', 73, 0.7, 1.8, 7, 0, 100, '¼ can', 'ml'],
 ];
 
 export const builtInFoodId = (name: string) => `food-${slug(name)}`;

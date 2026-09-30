@@ -20,6 +20,7 @@ export function RecipePickerSheet({
   onPick,
   onSearchFoods,
   onClose,
+  allow,
 }: {
   title: string;
   slot: MealSlot;
@@ -28,14 +29,17 @@ export function RecipePickerSheet({
   onPick: (meal: SavedMeal, servings: number) => void;
   onSearchFoods?: () => void;
   onClose: () => void;
+  /** Your food preferences for this day/meal; recipes that don't fit are hidden unless "Show all". */
+  allow?: (m: SavedMeal) => boolean;
 }) {
   const meals = useSavedMeals();
   const [filter, setFilter] = useState<RecipeFilter>('all');
   const [q, setQ] = useState('');
+  const [all, setAll] = useState(false);
   const ranked = useMemo(() => {
     const allowed = new Set(filterRecipes(meals ?? [], filter, q).map((m) => m.id));
-    return swapOptions((meals ?? []).filter((m) => allowed.has(m.id)), slot, budget, proteinAim, null, 60);
-  }, [meals, filter, q, slot, budget, proteinAim]);
+    return swapOptions((meals ?? []).filter((m) => allowed.has(m.id) && (all || !allow || allow(m))), slot, budget, proteinAim, null, 100);
+  }, [meals, filter, q, slot, budget, proteinAim, all, allow]);
 
   return (
     <Sheet title={title} onClose={onClose}>
@@ -53,6 +57,11 @@ export function RecipePickerSheet({
           </button>
         ))}
       </div>
+      {allow && (
+        <button className="link-row" style={{ background: 'none', border: 0, padding: 0 }} onClick={() => setAll((v) => !v)}>
+          {all ? 'Only recipes that suit your answers' : 'Showing recipes that suit your answers · show all'}
+        </button>
+      )}
       {ranked.length ? (
         <div className="recipe-grid">
           {ranked.map((r, i) => (

@@ -8,6 +8,32 @@ No Mac, Xcode or App Store needed: build from Windows, deploy from GitHub, test 
 
 ## Status
 
+### Recipes tailored to you & shopping list → supermarket basket ✅
+- **94 recipes** across British, Italian, Asian, Indian, Mexican, Mediterranean and Middle Eastern cooking, with
+  options for every meal whatever your diet, including gluten-free. Diet, allergens and cost are worked out from the
+  ingredients.
+- **“Tell me how you eat”** (*Nutrition → Recipes*): 10 short questions about:
+  - what matters most for your goal (protein, feeling full, eating enough, eating healthier, saving time);
+  - diet, allergies and dislikes;
+  - breakfast and snacks;
+  - weekday and weekend cooking time;
+  - batch cooking, budget and cuisines;
+  - your biggest challenges (evening snacking, always hungry, low appetite, eating out, no time, boredom).
+- **What the answers change:**
+  - Recipes that don't fit are hidden, with a “show all” option.
+  - A **For you** row is ranked for your goal, with reasons such as “40 g protein”, “Filling: 80 kcal per 100 g” or “Ready in 10 min”.
+  - Tips target your challenges, and each recipe explains **why it suits you**.
+  - **Auto-fill** follows your answers (breakfast or not, 0–2 snacks, the same breakfast all week, weekday time
+    limits, batch cooking, larger portions when gaining) and says so if a meal has no recipes that fit.
+  - AI meal ideas and the AI coach use your answers too.
+  - Your targets never change.
+- **Send to supermarket** (*Shopping → Send to supermarket*): export the list, then run the Python script on a computer.
+  - It works on Tesco, Sainsbury’s, Asda, Morrisons, Ocado, Waitrose, Iceland, or any shop's search page.
+  - It opens the shop in a browser where you log in yourself and searches each item. You click *Add* (assist mode), or
+    it clicks the first result's *Add* for you (auto mode), using your price-book pack counts.
+  - It never checks out and never sees your password. See [`tools/shop_to_cart`](tools/shop_to_cart/README.md).
+- With sync on, run migration `0010_food_prefs.sql`.
+
 ### Recipes & easier meal planning ✅
 - **Recipe library** (*Nutrition → Recipes*): 26 built-in fitness recipes, from breakfasts and lunches to batch-cook
   dinners and snacks, plus your own. Each has a method, prep time and servings. Nutrition is worked out from the
@@ -215,7 +241,7 @@ Without this the app runs in **on-device mode** — everything works, data just 
 
 1. Create a free project at <https://supabase.com>.
 2. **SQL Editor** → paste and run each file in [`supabase/migrations/`](supabase/migrations/) in order
-   (`0001_init.sql` … `0009_recipes.sql`). When a new phase adds a migration, run just the new file.
+   (`0001_init.sql` … `0010_food_prefs.sql`). When a new phase adds a migration, run just the new file.
    `0003` also creates the private `progress-photos` storage bucket (owner-only access).
 3. **Project Settings → API**: copy the *Project URL* and the *anon public* key.
 4. Add them as environment variables where you build:
@@ -310,6 +336,7 @@ src/
   styles/      tokens.css (colours, dark/light), base, layout, components
 supabase/migrations/   cloud schema
 supabase/functions/claude/   optional Claude proxy (keeps the API key server-side)
+tools/shop_to_cart/   Python script: exported shopping list → supermarket basket (runs on a computer)
 scripts/generate-icons.mjs   regenerates icons + iOS splash screens from public/icons/icon.svg
 ```
 

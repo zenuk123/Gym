@@ -15,6 +15,7 @@ import { useToday } from '../../lib/useToday';
 import { haptic } from '../../pwa/platform';
 import { NutritionTabs } from './NutritionTabs';
 import { PriceSheet } from './PriceSheet';
+import { CartExportSheet } from './CartExportSheet';
 import './nutrition.css';
 
 /** Shopping list for a plan week, grouped by aisle. Plan items are generated; your own additions are kept. */
@@ -24,6 +25,7 @@ export function ShoppingPage({ profile }: { profile: Profile }) {
   const prices = usePrices();
   const [pricing, setPricing] = useState<ShoppingItem | null>(null);
   const [view, setView] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
   const toast = useToast();
   const [weekStart, setWeekStart] = useState(startOfWeek(today));
   const plan = usePlanItems(weekStart, addDays(weekStart, 6));
@@ -253,6 +255,9 @@ export function ShoppingPage({ profile }: { profile: Profile }) {
               </div>
             </section>
           ))}
+          <button className="btn btn-primary btn-block" onClick={() => setExporting(true)} disabled={remaining === 0}>
+            <Icon name="cart" /> Send to supermarket
+          </button>
           <div className="btn-row">
             <button className="btn" onClick={() => void share()}>
               <Icon name="share" /> Share list
@@ -274,6 +279,16 @@ export function ShoppingPage({ profile }: { profile: Profile }) {
             )}
           </div>
         </>
+      )}
+      {exporting && (
+        <CartExportSheet
+          list={list}
+          weekStart={weekStart}
+          prices={prices}
+          foods={foodMap}
+          initialShop={shownShop && shownShop !== 'best' ? shownShop : null}
+          onClose={() => setExporting(false)}
+        />
       )}
       {pricing && (
         <PriceSheet

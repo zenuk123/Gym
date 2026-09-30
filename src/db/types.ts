@@ -46,6 +46,36 @@ export interface Profile extends SyncFields {
   nextRoutineSetAt?: number | null;
   /** ISO 4217 code for the price book (default GBP). */
   currency?: string | null;
+  /** Answers from "Tell me how you eat" — shapes recipe suggestions and auto-fill. */
+  foodPrefs?: FoodPrefs | null;
+}
+
+export const CUISINES = ['british', 'italian', 'asian', 'indian', 'mexican', 'mediterranean', 'middle-eastern'] as const;
+export type Cuisine = (typeof CUISINES)[number];
+export const ALLERGENS = ['gluten', 'dairy', 'egg', 'peanut', 'tree-nut', 'fish', 'shellfish', 'soy'] as const;
+export type Allergen = (typeof ALLERGENS)[number];
+export type Diet = 'everything' | 'pescatarian' | 'vegetarian' | 'vegan';
+export type FoodFocus = 'protein' | 'fullness' | 'fuel' | 'healthy' | 'time';
+export type FoodChallenge = 'snacking' | 'protein' | 'hungry' | 'low-appetite' | 'eating-out' | 'no-time' | 'bored';
+
+export interface FoodPrefs {
+  focus: FoodFocus;
+  diet: Diet;
+  avoid: Allergen[];
+  /** Ingredients you'd rather not eat (lower-case words, matched against ingredient names). */
+  dislikes: string[];
+  breakfast: boolean;
+  snacks: 0 | 1 | 2;
+  /** Max minutes on weekdays / weekends (null = no limit). */
+  weekdayMin: number | null;
+  weekendMin: number | null;
+  batch: 'love' | 'sometimes' | 'fresh';
+  budget: 'tight' | 'normal' | 'treat';
+  cuisines: Cuisine[];
+  challenges: FoodChallenge[];
+  sameBreakfast: boolean;
+  /** When answered (ms). */
+  answeredAt: number;
 }
 
 export interface WeightEntry extends SyncFields {
@@ -134,6 +164,7 @@ export interface SavedMeal extends SyncFields {
   source?: 'builtin' | 'custom' | null;
   /** Emoji for the illustrated cover shown until you add a photo. */
   cover?: string | null;
+  cuisine?: Cuisine | null;
 }
 
 export const RECIPE_TAGS = ['high-protein', 'vegetarian', 'vegan', 'quick', 'meal-prep', 'low-calorie'] as const;

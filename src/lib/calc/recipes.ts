@@ -74,6 +74,14 @@ export interface AutoPlanInput {
   require?: RecipeTag[];
   /** Different seed → different (but repeatable) picks. */
   seed?: number;
+  /** Extra per-day rules (diet, allergens, time available…). */
+  allow?: (m: SavedMeal, date: ISODate, slot: MealSlot) => boolean;
+  /** Preference bonus 0–1 (higher = suits you better). */
+  bonus?: (m: SavedMeal) => number;
+  /** Portion sizes allowed for single-serving recipes. */
+  portions?: number[];
+  /** Keep the same breakfast all week. */
+  sameBreakfast?: boolean;
 }
 
 function rng(seed: number) {
@@ -94,10 +102,10 @@ function score(kcal: number, protein: number, budget: number, proteinAim: number
   return kcalMiss + 0.6 * proteinShort;
 }
 
-function bestPortion(m: SavedMeal, budget: number, proteinAim: number) {
+function bestPortion(m: SavedMeal, budget: number, proteinAim: number, portions = PORTIONS) {
   const per = mealPerServing(m);
   // Batch recipes are portioned as cooked; single recipes can be scaled a little.
-  const options = m.servings > 1 ? [1] : PORTIONS;
+  const options = m.servings > 1 ? [1] : portions;
   let best = { servings: 1, kcal: per.kcal, proteinG: per.proteinG, s: Infinity };
   for (const sv of options) {
     const kcal = per.kcal * sv;
@@ -118,33 +126,45 @@ export function autoPlan(input: AutoPlanInput): Proposal[] {
   const pool = input.recipes.filter((m) => m.items.length > 0 && m.deletedAt === null && (input.require ?? []).every((t) => recipeTags(m).includes(t)));
   const uses = new Map<string, number>();
   for (const e of input.existing) if (e.mealId) uses.set(e.mealId, (uses.get(e.mealId) ?? 0) + 1);
-  const limit = (m: SavedMeal) => (m.servings > 1 ? m.servings : 2);
+  const limit = (m: SavedMeal, slot: MealSlot) => (slot === 'breakfast' && input.sameBreakfast ? 7 : m.servings > 1 ? m.servings : 2);
+  let breakfastPick: string | null = null;
   const out: Proposal[] = [];
 
   for (const date of input.days) {
     const planned = input.existing.filter((e) => e.date === date);
-    const empty = input.slots.filter((s) => !planned.some((p) => p.slot === s));
+    // A slot can appear more than once (e.g. two snacks); fill only what isn't planned yet.
+    const want = new Map<MealSlot, number>();
+    for (const s of input.slots) want.set(s, (want.get(s) ?? 0) + 1);
+    const empty: MealSlot[] = [];
+    for (const [s, n] of want) for (let i = planned.filter((p) => p.slot === s).length; i < n; i++) empty.push(s);
     if (!empty.length) continue;
     let kcalLeft = input.target.kcal - planned.reduce((a, p) => a + p.kcal, 0);
     let proteinLeft = input.target.proteinG - planned.reduce((a, p) => a + p.proteinG, 0);
     // Fill bigger meals first so snacks absorb what's left.
     const order = [...empty].sort((a, b) => SLOT_SHARE[b] - SLOT_SHARE[a]);
     let shareLeft = order.reduce((a, s) => a + SLOT_SHARE[s], 0);
+    const today = new Set<string>();
     for (const slot of order) {
       const frac = SLOT_SHARE[slot] / shareLeft;
       const budget = Math.max(100, kcalLeft * frac);
       const proteinAim = Math.max(0, proteinLeft * frac);
-      const ranked = pool
-        .filter((m) => fitsSlot(m, slot) && (uses.get(m.id) ?? 0) < limit(m))
+      const suitable = pool.filter((m) => fitsSlot(m, slot) && !today.has(m.id) && (!input.allow || input.allow(m, date, slot)));
+      // Prefer variety; if the varied options have run out, repeat rather than leave the meal empty.
+      const varied = suitable.filter((m) => (uses.get(m.id) ?? 0) < limit(m, slot));
+      const candidates = varied.length ? varied : suitable;
+      const sticky: SavedMeal | undefined = slot === 'breakfast' && input.sameBreakfast && breakfastPick ? candidates.find((m) => m.id === breakfastPick) : undefined;
+      const ranked: { m: SavedMeal; b: ReturnType<typeof bestPortion>; s: number }[] = (sticky ? [sticky] : candidates)
         .map((m) => {
-          const b = bestPortion(m, budget, proteinAim);
-          // Small random jitter so shuffles give different, still-sensible weeks; prefer favourites.
-          return { m, b, s: b.s + random() * 0.25 - (m.favourite ? 0.08 : 0) };
+          const b = bestPortion(m, budget, proteinAim, input.portions);
+          // Small random jitter so shuffles give different, still-sensible weeks; prefer favourites and what suits you.
+          return { m, b, s: b.s + random() * 0.25 - (m.favourite ? 0.08 : 0) - (input.bonus ? input.bonus(m) * 0.35 : 0) };
         })
         .sort((x, y) => x.s - y.s);
-      const pick = ranked[0];
+      const pick = ranked[0] as (typeof ranked)[number] | undefined;
       shareLeft -= SLOT_SHARE[slot];
       if (!pick) continue;
+      if (slot === 'breakfast') breakfastPick ??= pick.m.id;
+      today.add(pick.m.id);
       uses.set(pick.m.id, (uses.get(pick.m.id) ?? 0) + 1);
       kcalLeft -= pick.b.kcal;
       proteinLeft -= pick.b.proteinG;

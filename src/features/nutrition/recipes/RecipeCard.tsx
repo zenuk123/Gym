@@ -5,7 +5,7 @@ import { formatInt } from '../../../lib/format';
 import { RecipeImage } from './RecipeImage';
 
 /** Photo card for a recipe: picture, name, per-serving calories/protein and time. */
-export function RecipeCard({ meal, to, onClick, badge, servings = 1 }: { meal: SavedMeal; to?: string; onClick?: () => void; badge?: string; servings?: number }) {
+export function RecipeCard({ meal, to, onClick, badge, servings = 1, dim }: { meal: SavedMeal; to?: string; onClick?: () => void; badge?: string; servings?: number; dim?: boolean }) {
   const n = mealPerServing(meal);
   const body = (
     <>
@@ -23,12 +23,12 @@ export function RecipeCard({ meal, to, onClick, badge, servings = 1 }: { meal: S
   );
   if (to)
     return (
-      <Link to={to} className="recipe-card">
+      <Link to={to} className={`recipe-card${dim ? ' dim' : ''}`}>
         {body}
       </Link>
     );
   return (
-    <button type="button" className="recipe-card" onClick={onClick}>
+    <button type="button" className={`recipe-card${dim ? ' dim' : ''}`} onClick={onClick}>
       {body}
     </button>
   );

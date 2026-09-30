@@ -9,6 +9,7 @@ import { Sheet } from '../../components/Sheet';
 import { useToast } from '../../components/Toast';
 import { usePlanItems, useSavedMeals } from '../../db/hooks';
 import { SLOT_SHARE, swapOptions } from '../../lib/calc/recipes';
+import { prefsOf, recipeFits } from '../../lib/calc/foodPrefs';
 import { AutoPlanSheet } from './recipes/AutoPlanSheet';
 import { RecipeImage } from './recipes/RecipeImage';
 import { RecipePickerSheet } from './recipes/RecipePickerSheet';
@@ -216,6 +217,7 @@ export function PlanPage({ profile }: { profile: Profile }) {
                 setAdding(picking);
                 setPicking(null);
               }}
+              allow={profile.foodPrefs?.answeredAt ? (m) => recipeFits(m, prefsOf(profile), { date: picking.date, slot: picking.slot }).ok : undefined}
               onPick={async (meal, servings) => {
                 await addPlanItem(planMeal(picking.date, picking.slot, meal, servings));
                 toast(`Planned ${meal.name}`);

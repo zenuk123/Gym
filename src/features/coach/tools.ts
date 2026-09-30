@@ -12,6 +12,7 @@ import { nextRoutine, rotationOverride, suggestNext, weekStreak } from '../../li
 import { summariseWeight } from '../../lib/calc/weight';
 import { addDays, daysBetween, startOfWeek, todayISO } from '../../lib/dates';
 import { formatWeight } from '../../lib/units';
+import { prefsSummary } from '../../lib/calc/foodPrefs';
 
 // Read-only tools the coach can call. They only ever read this device's database —
 // the coach cannot change targets, the programme, or any logged data.
@@ -77,6 +78,7 @@ export const TOOLS: ToolSpec[] = [
         lastWeighIn: d.weights.at(-1) ? { date: d.weights.at(-1)!.date, kg: d.weights.at(-1)!.weightKg } : null,
         workoutStreakWeeks: weekStreak(d.finished, p.workoutsPerWeek, d.today),
         nextRoutine: nextRoutine(d.routines, d.finished, rotationOverride(d.profile))?.name ?? null,
+        foodPreferences: p.foodPrefs?.answeredAt ? { summary: prefsSummary(p.foodPrefs), focus: p.foodPrefs.focus, challenges: p.foodPrefs.challenges, breakfast: p.foodPrefs.breakfast, snacks: p.foodPrefs.snacks } : null,
         dataCounts: { weighIns: d.weights.length, workouts: d.finished.length, foodLogDays: new Set(d.foodLogs.map((l) => l.date)).size, sleepNights: d.sleep.length },
       };
     },

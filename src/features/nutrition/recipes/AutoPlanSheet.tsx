@@ -1,10 +1,13 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Icon } from '../../../components/Icon';
 import { Sheet } from '../../../components/Sheet';
 import { useToast } from '../../../components/Toast';
 import { useSavedMeals } from '../../../db/hooks';
 import type { MealSlot, PlanItem, Profile, RecipeTag } from '../../../db/types';
 import { planMeal } from '../../../lib/calc/plan';
+import { planSettings, prefsOf } from '../../../lib/calc/foodPrefs';
+import { ALLERGEN_LABEL } from '../../../lib/calc/ingredients';
 import { autoPlan, dayKcal, SLOT_SHARE, swapOptions, TAG_LABEL, type Proposal } from '../../../lib/calc/recipes';
 import { parseISODate } from '../../../lib/dates';
 import { formatInt } from '../../../lib/format';
@@ -21,7 +24,10 @@ const DIETS: RecipeTag[] = ['vegetarian', 'vegan', 'quick', 'high-protein'];
 export function AutoPlanSheet({ profile, days, existing, onClose }: { profile: Profile; days: string[]; existing: PlanItem[]; onClose: () => void }) {
   const toast = useToast();
   const meals = useSavedMeals();
-  const [slots, setSlots] = useState<MealSlot[]>(['breakfast', 'lunch', 'dinner', 'snack']);
+  const answered = !!profile.foodPrefs?.answeredAt;
+  const prefs = prefsOf(profile);
+  const settings = useMemo(() => (answered ? planSettings(prefsOf(profile), profile) : null), [answered, profile]);
+  const [slots, setSlots] = useState<MealSlot[]>(settings?.slots ?? ['breakfast', 'lunch', 'dinner', 'snack']);
   const [require, setRequire] = useState<RecipeTag[]>([]);
   const [seed, setSeed] = useState(1);
   const [edits, setEdits] = useState<Record<string, Proposal | null>>({});
@@ -29,11 +35,37 @@ export function AutoPlanSheet({ profile, days, existing, onClose }: { profile: P
   const target = { kcal: profile.calorieTarget, proteinG: profile.proteinTarget };
 
   const base = useMemo(
-    () => (meals ? autoPlan({ recipes: meals, days, slots, existing, target: { kcal: profile.calorieTarget, proteinG: profile.proteinTarget }, require, seed }) : []),
-    [meals, days, slots, existing, require, seed, profile.calorieTarget, profile.proteinTarget],
+    () =>
+      meals
+        ? autoPlan({
+            recipes: meals,
+            days,
+            slots,
+            existing,
+            target: { kcal: profile.calorieTarget, proteinG: profile.proteinTarget },
+            require,
+            seed,
+            allow: settings?.allow,
+            bonus: settings?.bonus,
+            portions: settings?.portions,
+            sameBreakfast: settings?.sameBreakfast,
+          })
+        : [],
+    [meals, days, slots, existing, require, seed, profile.calorieTarget, profile.proteinTarget, settings],
   );
-  const keyOf = (p: Pick<Proposal, 'date' | 'slot'>) => `${p.date}|${p.slot}`;
-  const proposals = base.map((p) => (keyOf(p) in edits ? edits[keyOf(p)] : p)).filter((p): p is Proposal => p !== null);
+  // Stable key per proposal (a day can have two snacks).
+  const keyed = useMemo(() => {
+    const seen = new Map<string, number>();
+    return base.map((p) => {
+      const k = `${p.date}|${p.slot}`;
+      const i = seen.get(k) ?? 0;
+      seen.set(k, i + 1);
+      return { key: `${k}|${i}`, p };
+    });
+  }, [base]);
+  const current = keyed.map(({ key, p }) => ({ key, p: key in edits ? edits[key] : p })).filter((x): x is { key: string; p: Proposal } => x.p !== null);
+  const proposals = current.map((x) => x.p);
+  const keyOf = (p: Proposal) => current.find((x) => x.p === p)!.key;
   const byId = new Map((meals ?? []).map((m) => [m.id, m]));
 
   function reset(patch: () => void) {
@@ -46,7 +78,8 @@ export function AutoPlanSheet({ profile, days, existing, onClose }: { profile: P
     const used = dayKcal(p.date, others, existing);
     // A swap should fill what the day still needs after its other meals (never more than ~1.5× a normal share).
     const budget = Math.min(Math.max(100, target.kcal - used.kcal), target.kcal * SLOT_SHARE[p.slot] * 1.5);
-    const opts = swapOptions(meals ?? [], p.slot, budget, Math.max(0, target.proteinG - used.proteinG) * 0.5, null, 6);
+    const pool = (meals ?? []).filter((m) => !settings || settings.allow(m, p.date, p.slot));
+    const opts = swapOptions(pool, p.slot, budget, Math.max(0, target.proteinG - used.proteinG) * 0.5, null, 6);
     if (!opts.length) return;
     const i = opts.findIndex((o) => o.meal.id === p.mealId);
     const next = opts[(i + 1) % opts.length];
@@ -64,6 +97,8 @@ export function AutoPlanSheet({ profile, days, existing, onClose }: { profile: P
   }
 
   const planDays = days.filter((d) => proposals.some((p) => p.date === d));
+  // Meals the planner couldn't fill at all (nothing fits the answers/filters).
+  const unfilled = [...new Set(slots)].filter((s) => days.some((d) => !existing.some((e) => e.date === d && e.slot === s)) && !base.some((p) => p.slot === s));
 
   return (
     <Sheet title="Plan my week" onClose={onClose}>
@@ -75,7 +110,13 @@ export function AutoPlanSheet({ profile, days, existing, onClose }: { profile: P
               key={m.value}
               className="chip"
               aria-pressed={slots.includes(m.value)}
-              onClick={() => reset(() => setSlots((s) => (s.includes(m.value) ? s.filter((x) => x !== m.value) : [...s, m.value])))}
+              onClick={() =>
+                reset(() =>
+                  setSlots((s) =>
+                    s.includes(m.value) ? s.filter((x) => x !== m.value) : [...s, ...Array<MealSlot>(m.value === 'snack' ? Math.max(1, prefs.snacks) : 1).fill(m.value)],
+                  ),
+                )
+              }
             >
               {m.label}
             </button>
@@ -92,11 +133,33 @@ export function AutoPlanSheet({ profile, days, existing, onClose }: { profile: P
           ))}
         </div>
       </div>
+      {answered ? (
+        <p className="faint" style={{ fontSize: 13 }}>
+          Following your answers: {prefs.diet === 'everything' ? 'any diet' : prefs.diet}
+          {prefs.avoid.length ? ` · no ${prefs.avoid.map((a) => ALLERGEN_LABEL[a].toLowerCase()).join(', ')}` : ''}
+          {prefs.dislikes.length ? ` · no ${prefs.dislikes.join(', ')}` : ''}
+          {prefs.weekdayMin ? ` · weekday meals ≤ ${prefs.weekdayMin} min` : ''}
+          {prefs.snacks === 2 ? ' · 2 snacks' : ''}. <Link to="/nutrition/preferences">Change</Link>
+        </p>
+      ) : (
+        <p className="faint" style={{ fontSize: 13 }}>
+          <Link to="/nutrition/preferences">Answer a few questions</Link> so the plan fits your diet, allergies and time.
+        </p>
+      )}
       <p className="faint" style={{ fontSize: 13 }}>
         <span className="pill kind-suggestion">Suggestion</span> Aiming for about {formatInt(target.kcal)} kcal and {formatInt(target.proteinG)} g protein a day. Meals you’ve already
         planned are kept. Tap <b>Swap</b> for something else.
       </p>
 
+      {meals && unfilled.length > 0 && (
+        <div className="banner">
+          <Icon name="info" />
+          <div className="grow">
+            No {unfilled.map((s) => MEALS.find((m) => m.value === s)!.label.toLowerCase()).join(' or ')} recipes fit {answered ? 'your answers' : 'these filters'}. Add your own
+            recipe, loosen a filter{answered ? <> or <Link to="/nutrition/preferences">change your answers</Link></> : ''}.
+          </div>
+        </div>
+      )}
       {planDays.length === 0 ? (
         <p className="muted">{meals ? 'Nothing to fill — those meals are already planned, or no recipes match the filters.' : 'Loading recipes…'}</p>
       ) : (

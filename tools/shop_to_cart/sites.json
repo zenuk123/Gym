@@ -1,0 +1,10 @@
+{
+  "_comment": "Search URL templates: {query} is replaced by the item's search term. Add your own shop with --search-url or a new entry here. These are the sites' public search pages; if one changes, update it here.",
+  "tesco": { "name": "Tesco", "home": "https://www.tesco.com/groceries/en-GB", "search": "https://www.tesco.com/groceries/en-GB/search?query={query}" },
+  "sainsburys": { "name": "Sainsbury's", "home": "https://www.sainsburys.co.uk/gol-ui/groceries", "search": "https://www.sainsburys.co.uk/gol-ui/SearchResults/{query}" },
+  "asda": { "name": "Asda", "home": "https://groceries.asda.com", "search": "https://groceries.asda.com/search/{query}" },
+  "morrisons": { "name": "Morrisons", "home": "https://groceries.morrisons.com", "search": "https://groceries.morrisons.com/search?entry={query}" },
+  "ocado": { "name": "Ocado", "home": "https://www.ocado.com", "search": "https://www.ocado.com/search?entry={query}" },
+  "waitrose": { "name": "Waitrose", "home": "https://www.waitrose.com/ecom/shop/browse/groceries", "search": "https://www.waitrose.com/ecom/shop/search?searchTerm={query}" },
+  "iceland": { "name": "Iceland", "home": "https://www.iceland.co.uk", "search": "https://www.iceland.co.uk/search?q={query}" }
+}

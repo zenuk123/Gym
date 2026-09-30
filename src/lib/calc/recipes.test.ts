@@ -10,7 +10,7 @@ const target = { kcal: 2400, proteinG: 150 };
 
 describe('built-in recipes', () => {
   it('all resolve to foods with sensible nutrition and a method', () => {
-    expect(BUILT_IN_RECIPES.length).toBeGreaterThanOrEqual(24);
+    expect(BUILT_IN_RECIPES.length).toBeGreaterThanOrEqual(80);
     for (const r of BUILT_IN_RECIPES) {
       const n = mealPerServing(r);
       expect(n.kcal, r.name).toBeGreaterThan(100);
@@ -33,7 +33,7 @@ describe('built-in recipes', () => {
   it('filters by slot, tag and search', () => {
     expect(filterRecipes(BUILT_IN_RECIPES, 'breakfast').every((r) => r.slot === 'breakfast')).toBe(true);
     expect(filterRecipes(BUILT_IN_RECIPES, 'vegan').length).toBeGreaterThanOrEqual(3);
-    expect(filterRecipes(BUILT_IN_RECIPES, 'all', 'salmon').map((r) => r.name)).toEqual(['Salmon, rice & greens']);
+    expect(filterRecipes(BUILT_IN_RECIPES, 'all', 'paneer').map((r) => r.name)).toEqual(['Paneer & pea curry']);
     expect(filterRecipes(BUILT_IN_RECIPES, 'all', 'feta').length).toBeGreaterThanOrEqual(2); // by ingredient
     expect(fitsSlot(BUILT_IN_RECIPES.find((r) => r.slot === 'lunch')!, 'dinner')).toBe(true);
   });

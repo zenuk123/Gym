@@ -84,6 +84,16 @@ The owner has **no Mac** — never introduce Xcode, Swift or Mac-only tooling. N
 - Planner maths: `lib/calc/recipes.ts` (`autoPlan`, `swapOptions`, `filterRecipes`) — pure + tested; it only proposes.
 - Don't name CSS modifier classes `card`/`hero`-style generic words on elements that aren't cards (global `.card` exists).
 
+## Food preferences & cart export
+- `Profile.foodPrefs` (questionnaire at `/nutrition/preferences`). Logic in `lib/calc/foodPrefs.ts`: `recipeFits`
+  (hard rules), `scoreRecipe`/`recommend` (goal-aware ranking + readable reasons), `prefTips`, `planSettings` (feeds `autoPlan`).
+- Diet/allergens/cost come from ingredient names (`lib/calc/ingredients.ts`) — keep built-in food names classifiable,
+  and always tell users to check labels for allergies.
+- New built-in recipes must keep `foodPrefs.test.ts` coverage passing (every diet ± gluten has options for every meal).
+- Shopping export: `lib/calc/cartExport.ts` (format `fitness-os-shopping-list` v1) is the contract with
+  `tools/shop_to_cart/add_to_cart.py`; change both together. The script must never check out, store credentials or
+  bypass robot checks. Its tests use a local fake shop: `python -m pytest tools/shop_to_cart/tests`.
+
 ## UI conventions
 - Design for a 375–440 px wide iPhone first. Touch targets ≥ 44 px, inputs ≥ 16 px font (prevents iOS zoom).
 - Respect safe areas (`--safe-top`, `--safe-bottom`). Bottom nav is fixed; pages pad for it.

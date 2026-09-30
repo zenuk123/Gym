@@ -7,7 +7,9 @@ import { Sheet } from '../../../components/Sheet';
 import { useToast } from '../../../components/Toast';
 import { useSavedMeals } from '../../../db/hooks';
 import { update } from '../../../db/repo';
-import type { MealSlot, SavedMeal } from '../../../db/types';
+import type { MealSlot, Profile, SavedMeal } from '../../../db/types';
+import { CUISINE_LABEL, prefsOf, recipeFits, scoreRecipe } from '../../../lib/calc/foodPrefs';
+import { ALLERGEN_LABEL, recipeAllergens, recipeDiet } from '../../../lib/calc/ingredients';
 import { mealPerServing } from '../../../lib/calc/food';
 import { formatQuantity, planMeal } from '../../../lib/calc/plan';
 import { recipeTags, TAG_LABEL } from '../../../lib/calc/recipes';
@@ -24,7 +26,7 @@ import { RecipeImage } from './RecipeImage';
 import '../nutrition.css';
 
 /** A recipe to read and cook from: photo, macros, ingredients (scaled), method you can tick through. */
-export function RecipePage() {
+export function RecipePage({ profile }: { profile: Profile }) {
   const { id } = useParams();
   const meals = useSavedMeals();
   const toast = useToast();
@@ -48,6 +50,11 @@ export function RecipePage() {
   const portions = cook ?? meal.servings;
   const factor = portions / Math.max(1, meal.servings);
   const tags = recipeTags(meal);
+  const answered = !!profile.foodPrefs?.answeredAt;
+  const fit = answered ? recipeFits(meal, prefsOf(profile)) : null;
+  const why = answered && fit?.ok ? scoreRecipe(meal, profile, prefsOf(profile)).reasons : [];
+  const allergens = recipeAllergens(meal);
+  const diet = recipeDiet(meal);
   const steps = meal.steps?.length ? meal.steps : meal.notes ? meal.notes.split('\n').filter((s) => s.trim()) : [];
 
   async function setPhoto(file: File) {
@@ -90,6 +97,7 @@ export function RecipePage() {
           {meal.prepMin ? <span>⏱ {meal.prepMin} min</span> : null}
           <span>{meal.servings > 1 ? `Makes ${meal.servings} portions` : '1 portion'}</span>
           {meal.slot && <span>{MEALS.find((m) => m.value === meal.slot)?.label}</span>}
+          {meal.cuisine && <span>{CUISINE_LABEL[meal.cuisine]}</span>}
         </div>
       </div>
       {tags.length > 0 && (
@@ -100,6 +108,23 @@ export function RecipePage() {
             </span>
           ))}
         </div>
+      )}
+
+      {fit && !fit.ok && (
+        <div className="banner">
+          <Icon name="info" />
+          <div className="grow">Doesn’t suit your answers: {fit.why?.toLowerCase()}.</div>
+        </div>
+      )}
+      {why.length > 0 && (
+        <section className="card why-card">
+          <b>Why it suits you</b>
+          <ul>
+            {why.map((w) => (
+              <li key={w}>✓ {w}</li>
+            ))}
+          </ul>
+        </section>
       )}
 
       <section className="card">
@@ -123,6 +148,10 @@ export function RecipePage() {
         </div>
         <p className="faint" style={{ fontSize: 13, textAlign: 'center' }}>
           Per portion · worked out from the ingredients
+        </p>
+        <p className="faint" style={{ fontSize: 13, textAlign: 'center' }}>
+          {diet === 'everything' ? 'Contains meat' : diet[0].toUpperCase() + diet.slice(1)}
+          {allergens.length ? ` · Contains ${allergens.map((a) => ALLERGEN_LABEL[a].toLowerCase()).join(', ')}` : ''} · check labels for allergies
         </p>
       </section>
 

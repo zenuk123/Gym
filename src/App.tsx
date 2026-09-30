@@ -14,6 +14,7 @@ import { NutritionPage } from './features/nutrition/NutritionPage';
 import { FoodEditor, FoodsPage } from './features/nutrition/FoodsPage';
 import { MealEditor } from './features/nutrition/MealsPage';
 import { RecipesPage } from './features/nutrition/recipes/RecipesPage';
+import { FoodPrefsPage } from './features/nutrition/recipes/FoodPrefsPage';
 import { RecipePage } from './features/nutrition/recipes/RecipePage';
 import { PlanPage } from './features/nutrition/PlanPage';
 import { ShoppingPage } from './features/nutrition/ShoppingPage';
@@ -77,8 +78,9 @@ export function App() {
             <Route path="/nutrition" element={<NutritionPage profile={profile} />} />
             <Route path="/nutrition/foods" element={<FoodsPage />} />
             <Route path="/nutrition/foods/:id" element={<FoodEditor />} />
-            <Route path="/nutrition/meals" element={<RecipesPage />} />
-            <Route path="/nutrition/meals/:id" element={<RecipePage />} />
+            <Route path="/nutrition/meals" element={<RecipesPage profile={profile} />} />
+            <Route path="/nutrition/preferences" element={<FoodPrefsPage profile={profile} />} />
+            <Route path="/nutrition/meals/:id" element={<RecipePage profile={profile} />} />
             <Route path="/nutrition/meals/:id/edit" element={<MealEditor />} />
             <Route path="/nutrition/plan" element={<PlanPage profile={profile} />} />
             <Route path="/nutrition/shopping" element={<ShoppingPage profile={profile} />} />
