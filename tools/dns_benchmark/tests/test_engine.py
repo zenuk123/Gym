@@ -120,18 +120,20 @@ def test_never_two_queries_in_flight_to_one_server_and_concurrency_capped():
 
 
 def test_rate_limiter_spaces_query_starts():
+    import time
+
     async def go():
-        lim = RateLimiter(100)  # ≥ 10 ms apart
-        loop = asyncio.get_running_loop()
+        lim = RateLimiter(100)  # slots 10 ms apart
         times = []
         for _ in range(6):
             await lim.acquire()
-            times.append(loop.time())
+            times.append(time.perf_counter())
         return times
 
     times = asyncio.run(go())
-    gaps = [b - a for a, b in zip(times, times[1:])]
-    assert min(gaps) >= 0.008
+    # Never ahead of schedule: query n starts at least n intervals after the first (robust to coarse OS timers).
+    for n, t in enumerate(times):
+        assert t - times[0] >= n * 0.010 - 1e-6
 
 
 def test_rounds_are_paced_over_time():

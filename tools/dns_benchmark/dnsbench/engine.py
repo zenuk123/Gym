@@ -141,9 +141,13 @@ class CancelToken:
 
 
 class RateLimiter:
-    """Spaces query *starts* at least ``1 / max_qps`` seconds apart."""
+    """Spaces query *starts* at least ``1 / max_qps`` seconds apart (on average, never ahead of schedule).
 
-    def __init__(self, max_qps: float, monotonic: Callable[[], float] = time.monotonic) -> None:
+    Uses a high-resolution clock and re-sleeps until each slot has really passed: on Windows asyncio's clock ticks
+    every ~15.6 ms and may wake a sleeper up to one tick early.
+    """
+
+    def __init__(self, max_qps: float, monotonic: Callable[[], float] = time.perf_counter) -> None:
         self.interval = 1.0 / max_qps if max_qps > 0 else 0.0
         self._next = 0.0
         self._lock = asyncio.Lock()
@@ -154,10 +158,10 @@ class RateLimiter:
             return
         async with self._lock:
             now = self._mono()
-            wait = self._next - now
-            self._next = max(now, self._next) + self.interval
-        if wait > 0:
-            await asyncio.sleep(wait)
+            slot = max(now, self._next)
+            self._next = slot + self.interval
+        while (left := slot - self._mono()) > 0:
+            await asyncio.sleep(left)
 
 
 @dataclass
