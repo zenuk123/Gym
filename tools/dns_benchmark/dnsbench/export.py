@@ -163,9 +163,12 @@ def to_txt(a: Analysis) -> str:
         lines.append("")
     pf = run.diagnostics.get("preflight")
     if pf:
-        warns = Preflight.from_dict(pf).warnings()
+        pre = Preflight.from_dict(pf)
+        warns = pre.warnings()
         if warns:
             lines += ["Notes", "-----"] + [f"• {m}" for _, m in warns] + [""]
+        lines += ["Connection checks (technical details)", "-------------------------------------"]
+        lines += [f"  {t}" for t in pre.technical_lines()] + [""]
     lines += ["How to read this", "----------------",
               ("Times are SIMULATED (demo mode)." if run.demo else
                "Times are real DNS lookups measured from this computer.") + " 'Median' is the typical lookup; the score",

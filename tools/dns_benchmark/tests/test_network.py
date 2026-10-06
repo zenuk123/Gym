@@ -141,3 +141,11 @@ def test_route_check_is_real_and_safe():
     assert diagnostics.has_route("127.0.0.1")
     assert isinstance(diagnostics.has_route("2606:4700:4700::1111"), bool)
     assert Family.V6.label == "IPv6"
+
+
+def test_technical_details_show_the_evidence(monkeypatch):
+    pf = preflight(Intercepting({}, LatencyProfile(10)), monkeypatch)
+    text = "\n".join(pf.technical_lines())
+    assert "Identity check Cloudflare (1.1.1.1): fail" in text
+    assert "Reserved address 192.0.2.1 answered: no" in text
+    assert "NXDOMAIN redirection): yes" in text

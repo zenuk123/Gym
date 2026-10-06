@@ -17,7 +17,7 @@ from ...results import VIEWS, Analysis
 from ...scoring import Ranked
 from ...stats import spike_threshold
 from ..charts import BarChart, BarRow, DistributionChart, DistRow, TimelineChart, TimelinePoint, TimelineSeries
-from ..widgets import AddressBox, Banner, Card, button, clear_layout, label, page_container
+from ..widgets import AddressBox, Banner, Card, Details, button, clear_layout, label, page_container
 
 if TYPE_CHECKING:
     from ..app import MainWindow
@@ -89,6 +89,10 @@ class ResultsPage(QWidget):
 
         for level, text in self._warnings(a, saved):
             self.content.addWidget(Banner(level, text))
+        pf = run.diagnostics.get("preflight")
+        if pf:
+            tech = label("\n".join(Preflight.from_dict(pf).technical_lines()), "muted", wrap=True, selectable=True)
+            self.content.addWidget(Details("Connection checks — technical details", tech))
 
         self.content.addWidget(self._winner_card(a))
         self.content.addWidget(self._table_card(a))

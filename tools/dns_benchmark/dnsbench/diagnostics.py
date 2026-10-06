@@ -72,6 +72,23 @@ class Preflight:
         p.identity_checks = [IdentityCheck(**c) for c in d.get("identity_checks", [])]
         return p
 
+    def technical_lines(self) -> list[str]:
+        """The evidence behind the notes, for "Technical details" and the TXT report."""
+        names = {"cloudflare": "Cloudflare", "quad9": "Quad9", "opendns": "OpenDNS"}
+        out = [f"IPv4: {self.ipv4} · IPv6: {self.ipv6} · current DNS answering: {self.current_dns_working}"]
+        for c in self.identity_checks:
+            out.append(f"Identity check {names.get(c.provider, c.provider)} ({c.server}): {c.result} — {c.detail}")
+        out.append(f"Reserved address {BOGUS_RESOLVER} answered: {'yes' if self.bogus_resolver_answered else 'no'}")
+        if self.nxdomain_redirect is not None:
+            out.append(f"Made-up name returned an address (NXDOMAIN redirection): "
+                       f"{'yes' if self.nxdomain_redirect else 'no'}")
+        if self.captive_portal is not None:
+            out.append(f"Sign-in page detected: {'yes' if self.captive_portal else 'no'}")
+        if self.upstream_resolver:
+            out.append(f"Upstream resolver: {self.upstream_resolver}"
+                       + (f" ({self.upstream_name})" if self.upstream_name else ""))
+        return out
+
     def warnings(self) -> list[tuple[str, str]]:
         """(level, plain-English message) pairs for the UI. level: error / warning / info."""
         out: list[tuple[str, str]] = []
