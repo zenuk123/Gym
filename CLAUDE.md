@@ -116,3 +116,12 @@ The owner has **no Mac** — never introduce Xcode, Swift or Mac-only tooling. N
 - Colours come from tokens in `src/styles/tokens.css` (dark default + light). Use `--accent-text` for lime text/icons.
 - Numeric entry: `NumberField` (decimal keypad, accepts `,`). Modal input: `Sheet` (keyboard-aware).
 - Keep components small and feature code under `src/features/<area>/`. No UI library; avoid new dependencies.
+
+## DNS Benchmark tool (`tools/dns_benchmark/`)
+- Separate Windows desktop app (Python 3.10+, PySide6 + dnspython), unrelated to the PWA build. See its README.
+- Tests: `cd tools/dns_benchmark && python -m pytest` (UI tests need `QT_QPA_PLATFORM=offscreen` on headless Linux).
+  The .exe is built by `.github/workflows/dns-benchmark.yml` on `windows-latest` (PyInstaller, `packaging/*.spec`).
+- Engine/maths (`engine.py`, `stats.py`, `scoring.py`) never import the UI; the engine only talks to a `Transport`
+  (`fake.py` for tests). Never hard-code a winner or fake results outside the clearly-labelled `--demo` mode.
+- Windows DNS changes only via `windows_dns.WindowsDnsManager` (validate → backup first → elevated script → verify);
+  never touch router settings.
