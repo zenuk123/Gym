@@ -130,7 +130,15 @@ def test_dns_interception_and_nxdomain_redirect_detected(monkeypatch):
 
 def test_identity_judgement():
     assert judge_identity("cloudflare", "NOERROR", Outcome.OK, ['"LHR"'])[0] == "pass"
+    # formats seen from the real services (GitHub's Windows runner, 2026-10)
+    assert judge_identity("cloudflare", "NOERROR", Outcome.OK, ['"iad02"'])[0] == "pass"
+    assert judge_identity("quad9", "NOERROR", Outcome.OK, ['"res714.iad"'])[0] == "pass"
+    assert judge_identity("opendns", "NOERROR", Outcome.OK, ['"server r2001.ash"', '"flags 20040020 0 70"'])[0] == "pass"
+    # what an intercepting resolver tends to send instead
     assert judge_identity("cloudflare", "NOERROR", Outcome.OK, ['"res100.ams.rrdns.pch.net"'])[0] == "fail"
+    assert judge_identity("cloudflare", "NOERROR", Outcome.OK, ['"ns1.isp-cache.example.net"'])[0] == "fail"
+    assert judge_identity("quad9", "NOERROR", Outcome.OK, ['"dns-cache-3.isp.example"'])[0] == "fail"
+    assert judge_identity("cloudflare", "SERVFAIL", Outcome.ERROR, [])[0] == "fail"
     assert judge_identity("quad9", "NOERROR", Outcome.OK, ['"res100.ams.rrdns.pch.net"'])[0] == "pass"
     assert judge_identity("opendns", "NOERROR", Outcome.OK, ['"server m12.lon"', '"flags 20"'])[0] == "pass"
     assert judge_identity("opendns", "NOERROR", Outcome.OK, [])[0] == "fail"

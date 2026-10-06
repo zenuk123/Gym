@@ -161,9 +161,11 @@ def judge_identity(provider: str, rcode: str | None, outcome: Outcome, answers: 
     txt = _txt_strings(answers)
     joined = " | ".join(txt) or "(empty answer)"
     if provider == "cloudflare":
-        ok = any(re.fullmatch(r"[A-Z]{3}", t.strip()) for t in txt)
+        # Cloudflare answers with its data-centre code: "LHR", "iad02" … — never a dotted host name.
+        ok = any(re.fullmatch(r"[A-Za-z]{3}\d{0,3}", t.strip()) for t in txt)
     elif provider == "quad9":
-        ok = any(("pch.net" in t or "quad9" in t.lower()) for t in txt)
+        # Quad9 answers with its resolver name: "res714.iad", "res100.ams.rrdns.pch.net" …
+        ok = any(re.match(r"res\d+\.", t.strip()) or "pch.net" in t or "quad9" in t.lower() for t in txt)
     elif provider == "opendns":
         ok = any(t.startswith("server ") for t in txt)
     else:
