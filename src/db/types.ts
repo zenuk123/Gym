@@ -400,6 +400,20 @@ export interface PriceEntry extends SyncFields {
   updatedOn: ISODate;
 }
 
+// ── Personal records ─────────────────────────────────────────────────────
+
+/**
+ * A lift logged on its own ("I hit 100 kg × 3"), e.g. a best from before using the app or a test
+ * day. Counts towards bests and PBs, never towards workouts per week or progression suggestions.
+ */
+export interface PersonalRecord extends SyncFields {
+  exerciseId: string;
+  date: ISODate;
+  weightKg: number;
+  reps: number;
+  note: string | null;
+}
+
 /** Local table name → record type, for every table that syncs. */
 export interface SyncTableMap {
   profile: Profile;
@@ -418,6 +432,7 @@ export interface SyncTableMap {
   shopping: ShoppingItem;
   sleep: SleepLog;
   prices: PriceEntry;
+  records: PersonalRecord;
 }
 export type SyncTable = keyof SyncTableMap;
 
@@ -439,6 +454,7 @@ export const REMOTE_TABLES: Record<SyncTable, string> = {
   shopping: 'shopping_items',
   sleep: 'sleep_logs',
   prices: 'prices',
+  records: 'personal_records',
 };
 
 export const SYNC_TABLES = Object.keys(REMOTE_TABLES) as SyncTable[];

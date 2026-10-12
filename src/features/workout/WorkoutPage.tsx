@@ -136,6 +136,18 @@ export function WorkoutPage({ profile }: { profile: Profile }) {
             </span>
           </button>
         )}
+        <Link to="/workout/records" className="list-row" style={{ '--tone': 'var(--pb)' } as React.CSSProperties}>
+          <span className="lead">
+            <Icon name="trophy" />
+          </span>
+          <div className="grow">
+            <div className="title">Personal records</div>
+            <div className="desc">Your bests for every exercise · log a PR</div>
+          </div>
+          <span className="trail">
+            <Icon name="chevronRight" />
+          </span>
+        </Link>
         <Link to="/workout/exercises" className="list-row" style={{ '--tone': 'var(--protein)' } as React.CSSProperties}>
           <span className="lead">
             <Icon name="dumbbell" />

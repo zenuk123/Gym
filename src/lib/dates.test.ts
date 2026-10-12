@@ -23,3 +23,12 @@ describe('dates', () => {
     expect(startOfWeek('2026-10-18')).toBe('2026-10-12');
   });
 });
+
+describe('relativeDayInline', () => {
+  it('lowercases only today/yesterday', async () => {
+    const { relativeDayInline } = await import('./dates');
+    expect(relativeDayInline('2026-10-12', '2026-10-12')).toBe('today');
+    expect(relativeDayInline('2026-10-11', '2026-10-12')).toBe('yesterday');
+    expect(relativeDayInline('2026-05-01', '2026-10-12')).toBe('1 May');
+  });
+});

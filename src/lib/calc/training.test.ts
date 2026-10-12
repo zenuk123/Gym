@@ -10,6 +10,9 @@ import {
   stepWeight,
   suggestNext,
   weekStreak,
+  recordWorkouts,
+  exerciseBests,
+  finishedWorkoutsInWeek,
   workoutStats,
 } from './training';
 
@@ -198,5 +201,44 @@ describe('live PB check', () => {
     expect(checkSetPB({ weightKg: 60, reps: 9 }, [{ weightKg: 60, reps: 8 }])!.kind).toBe('reps');
     expect(checkSetPB({ weightKg: 60, reps: 8 }, [{ weightKg: 60, reps: 8 }])).toBeNull();
     expect(checkSetPB({ weightKg: 60, reps: 8 }, [])).toBeNull();
+  });
+});
+
+describe('personal records logged on their own', () => {
+  const rec = (id: string, date: string, weightKg: number, reps: number) => ({ id, exerciseId: 'ex-bench-press', date, weightKg, reps, createdAt: 1, deletedAt: null as number | null });
+  const ses = (id: string, date: string, sets: [number, number][]): Workout => ({
+    id, routineId: 'r', name: 'Push', date, startedAt: Date.parse(`${date}T18:00:00`), endedAt: Date.parse(`${date}T19:00:00`), notes: null, createdAt: 1, updatedAt: 1, deletedAt: null,
+    exercises: [{ id: id + 'e', exerciseId: 'ex-bench-press', supersetGroup: null, restSec: 90, repMin: 6, repMax: 8, target: null, notes: null,
+      sets: sets.map(([kg, reps], i) => ({ id: `${id}-${i}`, kind: 'normal' as const, weightKg: kg, reps, rpe: null, done: true, completedAt: 0 })) }],
+  });
+
+  it('become one-set sessions that count for PBs but are not workouts', () => {
+    const workouts = [ses('w1', '2026-09-01', [[80, 5], [80, 5]])];
+    const records = [rec('r1', '2026-09-10', 90, 3), { ...rec('r2', '2026-09-11', 200, 1), deletedAt: 5 }];
+    const history = buildHistory([...workouts, ...recordWorkouts(records)]);
+    expect(history.get('ex-bench-press')!.map((s) => s.workoutId)).toEqual(['w1', 'r1']); // deleted one ignored
+    const pbs = detectPBs(history);
+    expect(pbs.map((p) => [p.kind, p.workoutId, p.weightKg])).toContainEqual(['weight', 'r1', 90]);
+    expect(finishedWorkoutsInWeek(workouts, '2026-09-07')).toHaveLength(0); // records live outside `finished`
+  });
+
+  it('exerciseBests: heaviest, e1RM and rep maxes across workouts and records', () => {
+    const history = buildHistory([ses('w1', '2026-09-01', [[80, 8], [85, 5]]), ...recordWorkouts([rec('r1', '2026-09-10', 100, 1)])]);
+    const b = exerciseBests(history.get('ex-bench-press')!);
+    expect(b.heaviest).toEqual({ weightKg: 100, reps: 1, date: '2026-09-10' });
+    expect(b.repMaxes[1]!.weightKg).toBe(100);
+    expect(b.repMaxes[3]!.weightKg).toBe(85);
+    expect(b.repMaxes[5]!.weightKg).toBe(85);
+    expect(b.repMaxes[8]!.weightKg).toBe(80);
+    expect(b.repMaxes[10]).toBeNull();
+    expect(Math.round(b.e1rm!.value)).toBe(101); // 80 × 8 → 101.3 beats 100 × 1
+    expect(b.lastImproved).toBe('2026-09-10');
+  });
+
+  it('a PR logged later the same day comes after that day’s workout (so it is the PR, not the baseline)', () => {
+    const w = ses('w1', '2026-09-01', [[80, 5]]);
+    const r = { ...rec('r1', '2026-09-01', 90, 3), createdAt: Date.parse('2026-09-01T21:30:00') };
+    const pbs = detectPBs(buildHistory([w, ...recordWorkouts([r])]));
+    expect(pbs.map((p) => [p.kind, p.workoutId])).toEqual([['weight', 'r1']]);
   });
 });

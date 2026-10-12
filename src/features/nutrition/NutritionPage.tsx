@@ -8,7 +8,7 @@ import { db } from '../../db/db';
 import { useFoodLogs } from '../../db/hooks';
 import { create } from '../../db/repo';
 import type { FoodLog, MealItem, MealSlot, Profile } from '../../db/types';
-import { addDays, relativeDay, todayISO, isLoggableDate } from '../../lib/dates';
+import { addDays, relativeDay, todayISO, isLoggableDate, relativeDayInline } from '../../lib/dates';
 import { formatInt } from '../../lib/format';
 import { newId } from '../../lib/id';
 import { macroTargets, sumIntake } from '../../lib/intake';
@@ -47,7 +47,7 @@ export function NutritionPage({ profile }: { profile: Profile }) {
   async function copyYesterday(slot: MealSlot) {
     const prev = addDays(date, -1);
     const src = (await db.foodLogs.where('date').equals(prev).toArray()).filter((l) => l.deletedAt === null && l.meal === slot);
-    if (src.length === 0) return toast(`Nothing logged for ${slot} ${relativeDay(prev, today).toLowerCase()}`);
+    if (src.length === 0) return toast(`Nothing logged for ${slot} ${relativeDayInline(prev, today)}`);
     for (const l of src) {
       const { id: _i, createdAt: _c, updatedAt: _u, deletedAt: _d, ...rest } = l;
       await create('foodLogs', { ...rest, date });

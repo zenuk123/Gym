@@ -63,3 +63,9 @@ export function relativeDay(s: ISODate, today: ISODate = todayISO()): string {
   if (diff > 1 && diff < 7) return parseISODate(s).toLocaleDateString('en-GB', { weekday: 'long' });
   return formatDateShort(s);
 }
+
+/** relativeDay for the middle of a sentence: "today", "yesterday", "Monday", "1 May" (names keep their capitals). */
+export function relativeDayInline(s: ISODate, today: ISODate = todayISO()): string {
+  const r = relativeDay(s, today);
+  return r === 'Today' || r === 'Yesterday' ? r.toLowerCase() : r;
+}

@@ -6,7 +6,7 @@ import { useFoodLogsRange, useMeasurements, usePhotos, useWaterLogsRange, useWei
 import type { Profile } from '../../db/types';
 import { nutritionSummary, trainingSummary } from '../../lib/calc/analytics';
 import { dailySeries, windowAverage } from '../../lib/calc/weight';
-import { addDays, relativeDay } from '../../lib/dates';
+import { addDays, relativeDayInline } from '../../lib/dates';
 import { formatInt, plural } from '../../lib/format';
 import { formatWeight } from '../../lib/units';
 import { useToday } from '../../lib/useToday';
@@ -106,7 +106,7 @@ export function OverviewPage({ profile }: { profile: Profile }) {
         <Link to="/progress/body" className="list-row">
           <div className="grow">
             <div className="title">Measurements</div>
-            <div className="desc">{lastMeasure ? `Last measured ${relativeDay(lastMeasure.date, today).toLowerCase()}` : 'None yet'}</div>
+            <div className="desc">{lastMeasure ? `Last measured ${relativeDayInline(lastMeasure.date, today)}` : 'None yet'}</div>
           </div>
           <span className="trail">
             <Icon name="chevronRight" />
@@ -115,7 +115,7 @@ export function OverviewPage({ profile }: { profile: Profile }) {
         <Link to="/progress/photos" className="list-row">
           <div className="grow">
             <div className="title">Progress photos</div>
-            <div className="desc">{lastPhoto ? `${plural(photos!.length, 'photo')} · latest ${relativeDay(lastPhoto.date, today).toLowerCase()}` : 'None yet'}</div>
+            <div className="desc">{lastPhoto ? `${plural(photos!.length, 'photo')} · latest ${relativeDayInline(lastPhoto.date, today)}` : 'None yet'}</div>
           </div>
           <span className="trail">
             <Icon name="chevronRight" />

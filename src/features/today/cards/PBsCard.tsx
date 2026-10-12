@@ -1,14 +1,18 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Icon } from '../../../components/Icon';
 import { CardHead, EmptyState } from '../../../components/CardHead';
 import type { Profile } from '../../../db/types';
 import { PB_LABEL } from '../../../lib/calc/training';
 import { addDays, relativeDay } from '../../../lib/dates';
 import { formatWeight } from '../../../lib/units';
+import { LogRecordSheet } from '../../workout/LogRecordSheet';
 import type { Training } from '../../workout/useTraining';
 
 /** Latest PBs (last 30 days), one per exercise. Detected automatically from logged sets. */
 export function PBsCard({ profile, t, today }: { profile: Profile; t: Training; today: string }) {
   const u = profile.weightUnit;
+  const [logging, setLogging] = useState(false);
   const since = addDays(today, -30);
   const seen = new Set<string>();
   const recent = t.pbs
@@ -18,10 +22,10 @@ export function PBsCard({ profile, t, today }: { profile: Profile; t: Training; 
 
   return (
     <section className="card">
-      <CardHead icon="trophy" tone="var(--pb)" title="Recent PBs" />
+      <CardHead icon="trophy" tone="var(--pb)" title="Recent PBs" link={{ to: '/workout/records', label: 'All records' }} />
       {recent.length === 0 ? (
         <EmptyState icon="trophy">
-          {t.finished.length === 0 ? 'Personal bests are detected automatically once you log workouts.' : 'Beat a previous best and it shows up here.'}
+          {t.finished.length === 0 && t.records.length === 0 ? 'Personal bests are detected automatically once you log workouts — or log one yourself.' : 'Beat a previous best and it shows up here.'}
         </EmptyState>
       ) : (
         <div className="pb-mini">
@@ -38,6 +42,10 @@ export function PBsCard({ profile, t, today }: { profile: Profile; t: Training; 
           ))}
         </div>
       )}
+      <button className="btn btn-block" onClick={() => setLogging(true)}>
+        <Icon name="plus" /> Log a PR
+      </button>
+      {logging && <LogRecordSheet t={t} profile={profile} onClose={() => setLogging(false)} />}
     </section>
   );
 }

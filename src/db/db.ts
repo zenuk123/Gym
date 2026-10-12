@@ -14,6 +14,7 @@ import type {
   ShoppingItem,
   SleepLog,
   PriceEntry,
+  PersonalRecord,
   Routine,
   WaterLog,
   WeightEntry,
@@ -45,6 +46,7 @@ export class FitnessDB extends Dexie {
   shopping!: EntityTable<ShoppingItem, 'id'>;
   sleep!: EntityTable<SleepLog, 'id'>;
   prices!: EntityTable<PriceEntry, 'id'>;
+  records!: EntityTable<PersonalRecord, 'id'>;
   outbox!: EntityTable<OutboxEntry, 'key'>;
   meta!: EntityTable<MetaEntry, 'key'>;
 
@@ -88,6 +90,10 @@ export class FitnessDB extends Dexie {
     // Price book for the shopping list
     this.version(7).stores({
       prices: 'id, itemKey, shop, updatedAt',
+    });
+    // Personal records logged on their own
+    this.version(8).stores({
+      records: 'id, exerciseId, date, updatedAt',
     });
   }
 }

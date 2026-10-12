@@ -19,7 +19,7 @@ export function useGoalStatuses(profile: Profile): GoalStatus[] | undefined {
     const bw = bodyweightGoal(profile, summariseWeight(weights, profile.startWeightKg, profile.targetWeightKg), today);
     if (bw) out.push(bw);
     out.push(frequencyGoal(profile, t.finished, today));
-    for (const g of goals.filter((x) => !x.archived)) out.push(evaluateGoal(g, { history: t.history, measurements, today }));
+    for (const g of goals.filter((x) => !x.archived)) out.push(evaluateGoal(g, { history: t.bests, measurements, today }));
     return out;
   }, [profile, weights, measurements, goals, t, today]);
 }

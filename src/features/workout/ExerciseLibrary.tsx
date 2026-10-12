@@ -8,11 +8,12 @@ import { SubHeader } from '../../components/PageHeader';
 import { useToast } from '../../components/Toast';
 import { remove, update } from '../../db/repo';
 import type { MuscleGroup, Profile } from '../../db/types';
-import { e1rm, PB_LABEL } from '../../lib/calc/training';
+import { e1rm, exerciseBests, PB_LABEL, REP_MAXES } from '../../lib/calc/training';
 import { daysBetween, relativeDay } from '../../lib/dates';
 import { formatWeight, parseDecimal, round, toDisplayWeight } from '../../lib/units';
 import { useToday } from '../../lib/useToday';
 import { CreateExerciseSheet } from './ExercisePicker';
+import { LogRecordSheet } from './LogRecordSheet';
 import { EQUIPMENT_LABEL, MUSCLE_LABEL, useTraining } from './useTraining';
 import './workout.css';
 import { matchesExercise } from './logic';
@@ -96,6 +97,7 @@ export function ExerciseDetail({ profile }: { profile: Profile }) {
   const toast = useToast();
   const navigate = useNavigate();
   const [inc, setInc] = useState<string | null>(null);
+  const [logging, setLogging] = useState(false);
   const u = profile.weightUnit;
 
   if (!t) return <main className="page" />;
@@ -108,14 +110,16 @@ export function ExerciseDetail({ profile }: { profile: Profile }) {
       </main>
     );
   }
+  // Sessions = real workouts; `all` adds PRs logged on their own (bests, chart, PBs).
   const sessions = t.history.get(ex.id) ?? [];
+  const all = t.bests.get(ex.id) ?? [];
+  const records = t.records.filter((r) => r.exerciseId === ex.id).sort((a, b) => b.date.localeCompare(a.date));
+  const isRecord = (id: string) => t.records.some((r) => r.id === id);
   const pbs = t.pbs.filter((p) => p.exerciseId === ex.id);
-  const heaviest = sessions.reduce<(typeof sessions)[number]['topSet'] | null>(
-    (a, s) => (!a || s.topSet.weightKg > a.weightKg || (s.topSet.weightKg === a.weightKg && s.topSet.reps > a.reps) ? s.topSet : a),
-    null,
-  );
-  const bestE1rm = Math.max(0, ...sessions.map((s) => s.bestE1rm));
-  const series = sessions.map((s) => ({ x: daysBetween(today, s.date), y: ex.bodyweight ? s.topSet.reps : toDisplayWeight(s.bestE1rm, u) }));
+  const bests = exerciseBests(all);
+  const heaviest = bests.heaviest;
+  const bestE1rm = bests.e1rm?.value ?? 0;
+  const series = all.map((s) => ({ x: daysBetween(today, s.date), y: ex.bodyweight ? s.topSet.reps : toDisplayWeight(s.bestE1rm, u) }));
   const incNum = inc === null ? null : parseDecimal(inc);
 
   return (
@@ -142,6 +146,26 @@ export function ExerciseDetail({ profile }: { profile: Profile }) {
           </div>
         )}
       </div>
+
+      <button className="btn btn-block" onClick={() => setLogging(true)}>
+        <Icon name="trophy" /> Log a PR
+      </button>
+      {!ex.bodyweight && heaviest && (
+        <section className="card">
+          <h2 className="chart-title">Rep maxes</h2>
+          <div className="rep-maxes" role="table" aria-label="Rep maxes">
+            {REP_MAXES.map((n) => (
+              <div key={n} role="row" className={bests.repMaxes[n] ? '' : 'empty'}>
+                <span role="rowheader">{n}RM</span>
+                <b role="cell" className="num">{bests.repMaxes[n] ? String(round(toDisplayWeight(bests.repMaxes[n]!.weightKg, u), 1)) : '—'}</b>
+              </div>
+            ))}
+          </div>
+          <p className="faint" style={{ fontSize: 13 }}>
+            Heaviest {u} you’ve lifted for at least that many reps.
+          </p>
+        </section>
+      )}
 
       {series.length >= 2 && (
         <section className="card">
@@ -177,7 +201,7 @@ export function ExerciseDetail({ profile }: { profile: Profile }) {
           <h2 className="section-title">Personal bests</h2>
           <div className="list">
             {pbs.slice(0, 8).map((p, k) => (
-              <Link key={k} to={`/workout/session/${p.workoutId}`} className="list-row">
+              <Link key={k} to={isRecord(p.workoutId) ? `/workout/records` : `/workout/session/${p.workoutId}`} className="list-row">
                 <span className="lead" style={{ '--tone': 'var(--pb)' } as React.CSSProperties}>
                   <Icon name="trophy" />
                 </span>
@@ -191,9 +215,44 @@ export function ExerciseDetail({ profile }: { profile: Profile }) {
                   </div>
                   <div className="desc">
                     {PB_LABEL[p.kind]} · {relativeDay(p.date, today)}
+                    {isRecord(p.workoutId) ? ' · logged PR' : ''}
                   </div>
                 </div>
               </Link>
+            ))}
+          </div>
+        </>
+      )}
+
+      {records.length > 0 && (
+        <>
+          <h2 className="section-title">Logged PRs</h2>
+          <div className="list">
+            {records.map((r) => (
+              <div key={r.id} className="list-row">
+                <span className="lead" style={{ '--tone': 'var(--pb)' } as React.CSSProperties}>
+                  <Icon name="trophy" />
+                </span>
+                <div className="grow">
+                  <div className="title">
+                    {formatWeight(r.weightKg, u)} × {r.reps}
+                  </div>
+                  <div className="desc">
+                    {relativeDay(r.date, today)}
+                    {r.note ? ` · ${r.note}` : ''}
+                  </div>
+                </div>
+                <button
+                  className="icon-btn"
+                  aria-label={`Delete PR ${formatWeight(r.weightKg, u)} × ${r.reps}`}
+                  onClick={async () => {
+                    await remove('records', r.id);
+                    toast('PR deleted', { label: 'Undo', run: () => void update('records', r.id, { deletedAt: null }) });
+                  }}
+                >
+                  <Icon name="trash" color="var(--text-3)" />
+                </button>
+              </div>
             ))}
           </div>
         </>
@@ -250,7 +309,7 @@ export function ExerciseDetail({ profile }: { profile: Profile }) {
           Save
         </button>
       )}
-      {sessions.length === 0 && !ex.builtIn ? (
+      {sessions.length === 0 && records.length === 0 && !ex.builtIn ? (
         <button
           className="btn btn-ghost btn-block"
           onClick={async () => {
@@ -272,6 +331,7 @@ export function ExerciseDetail({ profile }: { profile: Profile }) {
           {ex.archived ? 'Show in library' : 'Hide from library'}
         </button>
       )}
+      {logging && <LogRecordSheet t={t} profile={profile} exerciseId={ex.id} onClose={() => setLogging(false)} />}
     </main>
   );
 }

@@ -38,6 +38,11 @@ The owner has **no Mac** — never introduce Xcode, Swift or Mac-only tooling. T
   DB side: `actions.ts → addRoutineToWorkout`, `mergeWorkoutsInto` (returns undo), `logPastWorkout`, `fillFromRoutine`,
   `editWorkoutDetails`, `addDoneSet`, `addDoneExercise`, `repeatWorkout`. Logged workouts are edited in
   `WorkoutEditor.tsx` (`/workout/session/:id/edit`); every set there counts as done.
+- Personal records: synced `records` table (`PersonalRecord`, migration 0012) for lifts logged on their own
+  (`LogRecordSheet`, `/workout/records`). `recordWorkouts()` turns them into one-set pseudo-sessions (id = record id).
+  `useTraining()` has **`history`** (real sessions: planning, "last time", suggestions) and **`bests`** (sessions +
+  records: PBs, goals, charts, live PB check, `exerciseBests` / rep maxes). Never put records into `finished` —
+  they must not count as workouts. A PB whose `workoutId` is a record has no session page to link to.
 
 ## Progress (Phase 3)
 - Goal maths: `lib/calc/goals.ts` (profile goals are derived, user goals live in the `goals` table).

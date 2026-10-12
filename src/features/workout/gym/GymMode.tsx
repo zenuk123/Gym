@@ -101,7 +101,7 @@ function ActiveWorkout({ t, workout, profile }: { t: Training; workout: Workout;
 
     // Live PB check against history + earlier sets today. The first session of an
     // exercise is only a baseline (same rule as the summary), so it never shows PBs.
-    const past = t.history.get(current.exerciseId) ?? [];
+    const past = t.bests.get(current.exerciseId) ?? []; // includes PRs logged on their own
     if (focusSet.kind !== 'warmup' && past.length > 0) {
       const today = workout.exercises
         .filter((e) => e.exerciseId === current.exerciseId)

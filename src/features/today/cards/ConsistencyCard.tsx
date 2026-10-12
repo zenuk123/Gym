@@ -1,7 +1,7 @@
 import { CardHead } from '../../../components/CardHead';
 import type { Profile } from '../../../db/types';
 import { finishedWorkoutsInWeek, weekStreak } from '../../../lib/calc/training';
-import { relativeDay, startOfWeek } from '../../../lib/dates';
+import { startOfWeek, relativeDayInline } from '../../../lib/dates';
 import type { Training } from '../../workout/useTraining';
 
 /** Sessions this week vs target, and consecutive weeks on target. */
@@ -25,7 +25,7 @@ export function ConsistencyCard({ profile, t, today }: { profile: Profile; t: Tr
       </div>
       <p className="faint" style={{ fontSize: 13 }}>
         {streak > 0 ? `🔥 ${streak}-week streak on target` : 'Hit your weekly target to start a streak'}
-        {last && ` · last workout ${relativeDay(last.date, today).toLowerCase()}`}
+        {last && ` · last workout ${relativeDayInline(last.date, today)}`}
       </p>
     </section>
   );

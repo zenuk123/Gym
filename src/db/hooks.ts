@@ -15,6 +15,7 @@ import {
   type ShoppingItem,
   type SleepLog,
   type PriceEntry,
+  type PersonalRecord,
   type UserGoal,
   type WaterLog,
   type WeightEntry,
@@ -155,4 +156,9 @@ export function useSleep(): SleepLog[] | undefined {
 /** Every saved price (price book). */
 export function usePrices(): PriceEntry[] | undefined {
   return useLiveQuery(async () => (await db.prices.toArray()).filter(alive));
+}
+
+/** Personal records logged on their own, oldest first. */
+export function useRecords(): PersonalRecord[] | undefined {
+  return useLiveQuery(async () => (await db.records.orderBy('date').toArray()).filter(alive));
 }

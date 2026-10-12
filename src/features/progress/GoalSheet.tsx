@@ -32,7 +32,7 @@ export function GoalSheet({ profile, t, editing, onClose }: { profile: Profile; 
   const currentStart =
     kind === 'lift'
       ? exercise
-        ? currentLiftBest(t.history, exercise.id, metric)
+        ? currentLiftBest(t.bests, exercise.id, metric)
         : null
       : (siteSeries(measurements, site).at(-1)?.value ?? null);
   const start = editing ? editing.startValue : currentStart;

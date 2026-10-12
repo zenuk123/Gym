@@ -204,6 +204,14 @@ Everything lives under *More → Health & devices*.
     and notes. PBs and progress update automatically.
   - **Log a past workout** for a session you forgot to track. It can be pre-filled from a routine with your usual weights.
   - **Do this workout again** repeats any logged session, and **Save as a new routine** keeps it.
+- **Personal records** (*Workout → Personal records*, or **Log a PR** on Today and on any exercise):
+  - Every exercise's heaviest lift, best estimated 1RM and **rep maxes** (1/3/5/8/10RM) in one place. They're built
+    from your workouts automatically.
+  - **Log a PR** in a few taps (exercise, weight × reps, date, note) for lifts done elsewhere: a test day, another
+    gym, or before you used the app. As you type it tells you whether it beats your best.
+  - Logged PRs count towards bests, PBs, goals, charts and the friends feed. They never count as a workout or
+    change your suggested weights. Delete one with undo from the exercise page.
+  - With sync on, run migration `0012_personal_records.sql`.
 - **Less typing in the gym:** the weight you use on a set carries forward to the next empty sets of that type. Search
   understands shorthand ("db press", "ohp", "rdl", "pullup"). Deleting a workout can be undone.
 
@@ -273,7 +281,7 @@ Without this the app runs in **on-device mode** — everything works, data just 
 
 1. Create a free project at <https://supabase.com>.
 2. **SQL Editor** → paste and run each file in [`supabase/migrations/`](supabase/migrations/) in order
-   (`0001_init.sql` … `0011_devices.sql`). When a new phase adds a migration, run just the new file.
+   (`0001_init.sql` … `0012_personal_records.sql`). When a new phase adds a migration, run just the new file.
    `0003` also creates the private `progress-photos` storage bucket (owner-only access).
 3. **Project Settings → API**: copy the *Project URL* and the *anon public* key.
 4. Add them as environment variables where you build:

@@ -1,4 +1,4 @@
-import type { Exercise, ISODate, Routine, WeightUnit, Workout, WorkoutExercise, WorkoutSet } from '../../db/types';
+import type { Exercise, ISODate, PersonalRecord, Routine, WeightUnit, Workout, WorkoutExercise, WorkoutSet } from '../../db/types';
 import { addDays, startOfWeek } from '../dates';
 import { kgToLb, lbToKg } from '../units';
 
@@ -398,4 +398,104 @@ export function weekStreak(workouts: Workout[], target: number, today: ISODate):
     else break;
   }
   return streak;
+}
+
+// ── Personal records logged on their own ─────────────────────────────────
+
+/**
+ * Logged PRs as one-set "sessions", so history, PB detection, e1RM charts and goals treat them
+ * like any lift. They're kept out of `finished` workouts, so they never count as a session or
+ * feed progression suggestions. Workout id = record id.
+ */
+export function recordWorkouts(records: Pick<PersonalRecord, 'id' | 'exerciseId' | 'date' | 'weightKg' | 'reps' | 'createdAt' | 'deletedAt'>[]): Workout[] {
+  return records
+    .filter((r) => r.deletedAt === null && r.reps > 0)
+    .map((r) => {
+      // Logged the same day it happened → when it was logged (so it comes after that day's workout);
+      // a lift from another day → mid-day on that date.
+      const [y, m, d] = r.date.split('-').map(Number);
+      const logged = new Date(r.createdAt);
+      const sameDay = logged.getFullYear() === y && logged.getMonth() === m - 1 && logged.getDate() === d;
+      const at = sameDay ? r.createdAt : new Date(y, m - 1, d, 12).getTime() + (r.createdAt % 60_000);
+      return {
+        id: r.id,
+        routineId: null,
+        name: 'Personal record',
+        date: r.date,
+        startedAt: at,
+        endedAt: at,
+        notes: null,
+        createdAt: r.createdAt,
+        updatedAt: r.createdAt,
+        deletedAt: null,
+        exercises: [
+          {
+            id: r.id,
+            exerciseId: r.exerciseId,
+            supersetGroup: null,
+            restSec: 0,
+            repMin: r.reps,
+            repMax: r.reps,
+            target: null,
+            notes: null,
+            sets: [{ id: r.id, kind: 'normal', weightKg: r.weightKg, reps: r.reps, rpe: null, done: true, completedAt: at }],
+          },
+        ],
+      };
+    });
+}
+
+export const REP_MAXES = [1, 3, 5, 8, 10] as const;
+
+export interface BestLift {
+  weightKg: number;
+  reps: number;
+  date: ISODate;
+}
+
+export interface ExerciseBests {
+  /** Heaviest weight lifted (most reps at that weight). */
+  heaviest: BestLift | null;
+  /** Best estimated 1RM and the set it came from. */
+  e1rm: (BestLift & { value: number }) | null;
+  /** Heaviest weight for at least N reps, for N in REP_MAXES. */
+  repMaxes: Record<(typeof REP_MAXES)[number], BestLift | null>;
+  /** Most reps in one set (for bodyweight moves). */
+  mostReps: BestLift | null;
+  /** Date of the latest improvement of any of the above. */
+  lastImproved: ISODate | null;
+}
+
+/** All-time bests for one exercise from its sessions (workouts and logged records). */
+export function exerciseBests(sessions: ExerciseSession[]): ExerciseBests {
+  const out: ExerciseBests = { heaviest: null, e1rm: null, repMaxes: { 1: null, 3: null, 5: null, 8: null, 10: null }, mostReps: null, lastImproved: null };
+  const improved = (date: ISODate) => {
+    if (!out.lastImproved || date > out.lastImproved) out.lastImproved = date;
+  };
+  for (const s of [...sessions].sort((a, b) => a.startedAt - b.startedAt)) {
+    for (const set of s.sets) {
+      const lift = { weightKg: set.weightKg, reps: set.reps, date: s.date };
+      if (!out.heaviest || set.weightKg > out.heaviest.weightKg + EPS || (Math.abs(set.weightKg - out.heaviest.weightKg) < EPS && set.reps > out.heaviest.reps)) {
+        out.heaviest = lift;
+        improved(s.date);
+      }
+      const v = e1rm(set.weightKg, set.reps);
+      if (v > 0 && (!out.e1rm || v > out.e1rm.value + EPS)) {
+        out.e1rm = { ...lift, value: v };
+        improved(s.date);
+      }
+      for (const n of REP_MAXES) {
+        const cur = out.repMaxes[n];
+        if (set.reps >= n && set.weightKg > 0 && (!cur || set.weightKg > cur.weightKg + EPS)) {
+          out.repMaxes[n] = lift;
+          improved(s.date);
+        }
+      }
+      if (!out.mostReps || set.reps > out.mostReps.reps) {
+        out.mostReps = lift;
+        improved(s.date);
+      }
+    }
+  }
+  return out;
 }
