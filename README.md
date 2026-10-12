@@ -192,6 +192,20 @@ Everything lives under *More → Health & devices*.
 - **Works offline:** a workout started with no signal is saved on every tap and syncs when you're back online.
 - **History:** a workout summary after Finish, history by week, and per-exercise history with an e1RM chart.
   There's also a consistency card (sessions this week vs target, week streak) and a CSV export (one row per set).
+- **Combine workouts:**
+  - *Combine routines* (Workout tab) starts one session from two or more routines, e.g. Push + Core.
+    An exercise in both is only done once.
+  - In Gym Mode, **Add** can pull in a whole routine.
+  - In a routine's editor, **Add exercise → Add a whole routine** merges routines permanently.
+  - On any logged workout, **Combine** merges another session into it (e.g. morning + evening, or one split by
+    mistake). Shared exercises are joined and the times are added together. Undo is offered straight after.
+- **Fix or add workouts afterwards:**
+  - **Edit** any logged workout: weights, reps, set type (tap the set number), sets, exercises, name, date, length
+    and notes. PBs and progress update automatically.
+  - **Log a past workout** for a session you forgot to track. It can be pre-filled from a routine with your usual weights.
+  - **Do this workout again** repeats any logged session, and **Save as a new routine** keeps it.
+- **Less typing in the gym:** the weight you use on a set carries forward to the next empty sets of that type. Search
+  understands shorthand ("db press", "ohp", "rdl", "pullup"). Deleting a workout can be undone.
 
 ### Phase 1 — Foundation ✅
 - Installable PWA (manifest, icons, iOS splash screens, standalone mode, service worker)

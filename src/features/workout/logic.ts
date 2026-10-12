@@ -147,7 +147,43 @@ export function updateSet(w: Workout, exId: string, setId: string, fn: (s: Worko
 }
 
 export function completeSet(w: Workout, exId: string, setId: string, now = Date.now()): Workout {
-  return patchSet(w, exId, setId, { done: true, completedAt: now });
+  patchSet(w, exId, setId, { done: true, completedAt: now });
+  // First time on an exercise every set starts at 0: carry the weight you just used to the
+  // following sets of the same type that are still empty, so it's typed once, not every set.
+  const ex = findEx(w, exId);
+  const i = ex?.sets.findIndex((s) => s.id === setId) ?? -1;
+  const done = ex?.sets[i];
+  if (ex && done && done.weightKg > 0) {
+    for (const s of ex.sets.slice(i + 1)) if (!s.done && s.kind === done.kind && s.weightKg === 0) s.weightKg = done.weightKg;
+  }
+  return w;
+}
+
+/** Gym shorthand → words in exercise names ("db ohp" finds Dumbbell Overhead Press). */
+const ALIASES: Record<string, string[]> = {
+  db: ['dumbbell'],
+  bb: ['barbell'],
+  kb: ['kettlebell'],
+  ohp: ['overhead', 'press'],
+  rdl: ['romanian', 'deadlift'],
+  sldl: ['stiff', 'deadlift'],
+  bp: ['bench', 'press'],
+  dl: ['deadlift'],
+  lat: ['lat'],
+  tri: ['tricep'],
+  bi: ['bicep', 'curl'],
+  abs: ['crunch'],
+};
+const norm = (s: string) => s.toLowerCase().replace(/[-_/]/g, ' ').replace(/\s+/g, ' ').trim();
+const squash = (s: string) => norm(s).replace(/ /g, '');
+
+/** True when every word of the query (or its expansion) appears in the name; "pullup" finds "Pull-up". */
+export function matchesExercise(name: string, query: string): boolean {
+  const q = norm(query);
+  if (!q) return true;
+  const n = norm(name);
+  if (n.includes(q) || squash(name).includes(squash(query))) return true;
+  return q.split(' ').every((word) => (ALIASES[word] ?? [word]).every((part) => n.includes(part) || squash(name).includes(part)));
 }
 
 export function addSet(w: Workout, exId: string, kind: SetKind, opts: { incrementKg: number; unit: WeightUnit }): Workout {
@@ -243,4 +279,103 @@ export function afterSetCompleted(w: Workout, index: number): { index: number; r
     if (!members.includes(i) && pending(i)) return { index: i, rest: true };
   }
   return { index, rest: true };
+}
+
+// ── Combining workouts ───────────────────────────────────────────────────
+
+/** "Push + Pull", without repeating a name ("Workout + Workout" → "Workout"). */
+export function combinedName(names: string[]): string {
+  const uniq = [...new Set(names.map((n) => n.trim()).filter(Boolean))];
+  return uniq.length ? uniq.join(' + ') : 'Workout';
+}
+
+/** Fresh superset-group ids, so groups from different sources never accidentally join. */
+function regroup(exs: WorkoutExercise[]): WorkoutExercise[] {
+  const map = new Map<string, string>();
+  return exs.map((e) => {
+    if (!e.supersetGroup) return e;
+    if (!map.has(e.supersetGroup)) map.set(e.supersetGroup, newId());
+    return { ...e, supersetGroup: map.get(e.supersetGroup)! };
+  });
+}
+
+/**
+ * One routine made of several (e.g. Push + Abs), for starting a single session. Exercises keep
+ * their order; an exercise already in an earlier routine isn't added twice.
+ */
+export function combineRoutines(routines: Routine[]): Routine | null {
+  if (!routines.length) return null;
+  if (routines.length === 1) return routines[0];
+  const seen = new Set<string>();
+  const exercises: RoutineExercise[] = [];
+  for (const r of routines) {
+    const groups = new Map<string, string>();
+    for (const e of r.exercises) {
+      if (seen.has(e.exerciseId)) continue;
+      seen.add(e.exerciseId);
+      let g = e.supersetGroup;
+      if (g) {
+        if (!groups.has(g)) groups.set(g, newId());
+        g = groups.get(g)!;
+      }
+      exercises.push({ ...e, key: newId(), supersetGroup: g });
+    }
+  }
+  // Rotation carries on after the last routine done (Legs + Push → Pull is next).
+  return { ...routines[routines.length - 1], name: combinedName(routines.map((r) => r.name)), exercises };
+}
+
+/** Add a routine's exercises (with today's suggested targets) to a workout in progress. */
+export function appendPlanned(w: Workout, planned: WorkoutExercise[], routine?: Pick<Routine, 'id' | 'name'>): Workout {
+  w.exercises.push(...regroup(planned));
+  if (routine) {
+    // An empty workout becomes that routine; otherwise "Push" + Core → "Push + Core".
+    w.name = w.exercises.length === planned.length || w.name === 'Workout' ? routine.name : combinedName([w.name, routine.name]);
+    w.routineId = routine.id;
+  }
+  return w;
+}
+
+const durationMs = (w: Pick<Workout, 'startedAt' | 'endedAt'>) => Math.max(0, (w.endedAt ?? w.startedAt) - w.startedAt);
+
+/**
+ * Merge two logged workouts into one (e.g. a morning and an evening session, or a workout that
+ * was accidentally split in two). The result keeps `a`'s id; sets of an exercise that appears in
+ * both are joined into one entry. Time = both sessions' durations added up, starting at the
+ * earlier start. `b` is not changed here — the caller deletes it.
+ */
+export function mergeWorkouts(a: Workout, b: Workout): Workout {
+  const [first, second] = a.startedAt <= b.startedAt ? [a, b] : [b, a];
+  const exercises: WorkoutExercise[] = first.exercises.map((e) => ({ ...e, sets: [...e.sets] }));
+  for (const e of regroup(second.exercises)) {
+    const same = !e.supersetGroup && exercises.find((x) => x.exerciseId === e.exerciseId && !x.supersetGroup);
+    if (same) same.sets.push(...e.sets);
+    else exercises.push({ ...e, sets: [...e.sets] });
+  }
+  const notes = [first.notes, second.notes].map((n) => n?.trim()).filter(Boolean).join('\n');
+  return {
+    ...a,
+    routineId: second.routineId ?? first.routineId, // rotation carries on after the later session
+    name: combinedName([first.name, second.name]),
+    date: first.date,
+    startedAt: first.startedAt,
+    endedAt: first.endedAt === null && second.endedAt === null ? null : first.startedAt + durationMs(first) + durationMs(second),
+    notes: notes || null,
+    exercises,
+  };
+}
+
+/** Workouts worth offering to merge with `w`: other finished ones, same day first, then newest. */
+export function mergeCandidates(w: Workout, finished: Workout[], limit = 12): Workout[] {
+  return finished
+    .filter((x) => x.id !== w.id && x.deletedAt === null && x.endedAt !== null)
+    .sort((x, y) => Number(y.date === w.date) - Number(x.date === w.date) || y.startedAt - x.startedAt)
+    .slice(0, limit);
+}
+
+/** A workout logged after the fact (forgot to track it): finished, on the chosen day. */
+export function pastWorkout(date: string, name: string, minutes: number, startHour = 18): NewWorkout {
+  const [y, m, d] = date.split('-').map(Number);
+  const start = new Date(y, m - 1, d, startHour, 0, 0).getTime();
+  return { routineId: null, name: name.trim() || 'Workout', date, startedAt: start, endedAt: start + Math.max(1, minutes) * 60_000, notes: null, exercises: [] };
 }

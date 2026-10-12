@@ -32,6 +32,12 @@ The owner has **no Mac** — never introduce Xcode, Swift or Mac-only tooling. T
 - Built-in exercises are seeded locally (`db/seed/exercises.ts`) with stable ids and `updatedAt: 0`; never rename an id.
 - Progression suggestions only pre-fill today's sets — never modify a routine automatically.
 - `useTraining()` derives everything (history, PBs, active workout) from live queries; reuse it instead of re-querying.
+- Combining (pure, tested in `logic.ts`): `combineRoutines` (rotation follows the *last* routine), `appendPlanned`,
+  `mergeWorkouts` (keeps `a`'s id; rotation follows the later session; durations add up), `mergeCandidates`,
+  `pastWorkout`, `completeSet` (carries the weight forward to empty sets of the same kind), `matchesExercise` (shorthand).
+  DB side: `actions.ts → addRoutineToWorkout`, `mergeWorkoutsInto` (returns undo), `logPastWorkout`, `fillFromRoutine`,
+  `editWorkoutDetails`, `addDoneSet`, `addDoneExercise`, `repeatWorkout`. Logged workouts are edited in
+  `WorkoutEditor.tsx` (`/workout/session/:id/edit`); every set there counts as done.
 
 ## Progress (Phase 3)
 - Goal maths: `lib/calc/goals.ts` (profile goals are derived, user goals live in the `goals` table).

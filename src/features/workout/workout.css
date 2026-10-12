@@ -293,3 +293,65 @@
   max-height: 45dvh;
   overflow-y: auto;
 }
+
+.order-badge {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 14px;
+}
+.order-badge.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* Workout editor */
+.edit-ex {
+  gap: 8px;
+}
+.edit-ex-head {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.edit-sets {
+  display: grid;
+  gap: 6px;
+}
+.edit-set {
+  display: grid;
+  grid-template-columns: 44px 1fr 1fr 44px;
+  gap: 8px;
+  align-items: center;
+}
+.edit-set.head {
+  color: var(--text-3);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+.edit-set .input-wrap input {
+  text-align: center;
+}
+.set-kind {
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-2, transparent);
+  color: var(--text);
+  font-weight: 700;
+}
+.set-kind.kind-warmup {
+  color: var(--text-3);
+}
+.set-kind.kind-drop,
+.set-kind.kind-failure {
+  color: var(--accent-text);
+}

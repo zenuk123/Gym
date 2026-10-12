@@ -2,10 +2,11 @@ import { useMemo, useState } from 'react';
 import { Icon } from '../../components/Icon';
 import { NumberField, TextField } from '../../components/NumberField';
 import { Sheet } from '../../components/Sheet';
-import type { Equipment, Exercise, MuscleGroup } from '../../db/types';
+import type { Equipment, Exercise, MuscleGroup, Routine } from '../../db/types';
 import { parseDecimal } from '../../lib/units';
 import { createExercise } from './actions';
 import { EQUIPMENT_LABEL, MUSCLE_LABEL } from './useTraining';
+import { matchesExercise } from './logic';
 
 /** Search + filter the library, or create a custom exercise on the spot. */
 export function ExercisePicker({
@@ -13,11 +14,16 @@ export function ExercisePicker({
   onPick,
   onClose,
   title = 'Add exercise',
+  routines,
+  onPickRoutine,
 }: {
   exercises: Exercise[];
   onPick: (ex: Exercise) => void;
   onClose: () => void;
   title?: string;
+  /** Offer whole routines too (Gym Mode: add Core to today's Push). */
+  routines?: Routine[];
+  onPickRoutine?: (r: Routine) => void;
 }) {
   const [q, setQ] = useState('');
   const [muscle, setMuscle] = useState<MuscleGroup | null>(null);
@@ -26,7 +32,7 @@ export function ExercisePicker({
   const list = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return exercises.filter(
-      (e) => !e.archived && (!muscle || e.muscle === muscle) && (!needle || e.name.toLowerCase().includes(needle)),
+      (e) => !e.archived && (!muscle || e.muscle === muscle) && matchesExercise(e.name, needle),
     );
   }, [exercises, q, muscle]);
 
@@ -45,6 +51,18 @@ export function ExercisePicker({
           style={{ paddingLeft: 8 }}
         />
       </div>
+      {routines && routines.length > 0 && onPickRoutine && !q.trim() && (
+        <div className="field">
+          <span className="label">Add a whole routine</span>
+          <div className="chip-scroll">
+            {routines.map((r) => (
+              <button key={r.id} type="button" className="chip" onClick={() => onPickRoutine(r)} disabled={r.exercises.length === 0}>
+                <Icon name="plus" width={14} height={14} /> {r.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="chip-scroll">
         <button type="button" className="chip" aria-pressed={muscle === null} onClick={() => setMuscle(null)}>
           All

@@ -13,6 +13,8 @@ import { formatWeight } from '../../lib/units';
 import { plural } from '../../lib/format';
 import { useToday } from '../../lib/useToday';
 import { createFromTemplate, createRoutine, startWorkout } from './actions';
+import { CombineRoutinesSheet } from './CombineRoutinesSheet';
+import { LogPastWorkoutSheet } from './LogPastWorkoutSheet';
 import { planContext, useTraining, type Training } from './useTraining';
 import './workout.css';
 
@@ -22,6 +24,8 @@ export function WorkoutPage({ profile }: { profile: Profile }) {
   const today = useToday();
   const toast = useToast();
   const [picking, setPicking] = useState(false);
+  const [combining, setCombining] = useState(false);
+  const [logging, setLogging] = useState(false);
 
   if (!t) return <main className="page" />;
   const next = nextRoutine(t.routines, t.finished, rotationOverride(profile));
@@ -118,6 +122,20 @@ export function WorkoutPage({ profile }: { profile: Profile }) {
             </div>
           </button>
         )}
+        {!t.active && t.routines.length > 1 && (
+          <button className="list-row" style={{ '--tone': 'var(--coach)' } as React.CSSProperties} onClick={() => setCombining(true)}>
+            <span className="lead">
+              <Icon name="link" />
+            </span>
+            <div className="grow">
+              <div className="title">Combine routines</div>
+              <div className="desc">Do two or more in one session, e.g. Push + Core</div>
+            </div>
+            <span className="trail">
+              <Icon name="chevronRight" />
+            </span>
+          </button>
+        )}
         <Link to="/workout/exercises" className="list-row" style={{ '--tone': 'var(--protein)' } as React.CSSProperties}>
           <span className="lead">
             <Icon name="dumbbell" />
@@ -136,12 +154,21 @@ export function WorkoutPage({ profile }: { profile: Profile }) {
           </span>
           <div className="grow">
             <div className="title">Workout history</div>
-            <div className="desc">{plural(t.finished.length, 'workout')} logged</div>
+            <div className="desc">{plural(t.finished.length, 'workout')} logged · edit or combine any of them</div>
           </div>
           <span className="trail">
             <Icon name="chevronRight" />
           </span>
         </Link>
+        <button className="list-row" style={{ '--tone': 'var(--text-2)' } as React.CSSProperties} onClick={() => setLogging(true)}>
+          <span className="lead">
+            <Icon name="calendar" />
+          </span>
+          <div className="grow">
+            <div className="title">Log a past workout</div>
+            <div className="desc">Forgot to track a session? Add it afterwards</div>
+          </div>
+        </button>
       </div>
 
       {recent.length > 0 && (
@@ -171,8 +198,30 @@ export function WorkoutPage({ profile }: { profile: Profile }) {
         </>
       )}
 
+      {logging && <LogPastWorkoutSheet t={t} profile={profile} onClose={() => setLogging(false)} />}
+      {combining && (
+        <CombineRoutinesSheet
+          t={t}
+          onClose={() => setCombining(false)}
+          onStart={(r) => {
+            setCombining(false);
+            void start(r);
+          }}
+        />
+      )}
       {picking && (
         <Sheet title="Choose a workout" onClose={() => setPicking(false)}>
+          {t.routines.length > 1 && (
+            <button
+              className="btn btn-block"
+              onClick={() => {
+                setPicking(false);
+                setCombining(true);
+              }}
+            >
+              <Icon name="link" /> Combine two or more
+            </button>
+          )}
           <div className="list">
             {t.routines.map((r) => (
               <button key={r.id} className="list-row" onClick={() => void start(r)}>

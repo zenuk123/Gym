@@ -15,6 +15,7 @@ import { useToday } from '../../lib/useToday';
 import { CreateExerciseSheet } from './ExercisePicker';
 import { EQUIPMENT_LABEL, MUSCLE_LABEL, useTraining } from './useTraining';
 import './workout.css';
+import { matchesExercise } from './logic';
 
 export function ExerciseLibrary({ profile }: { profile: Profile }) {
   const t = useTraining();
@@ -28,7 +29,7 @@ export function ExerciseLibrary({ profile }: { profile: Profile }) {
     if (!t) return [];
     const needle = q.trim().toLowerCase();
     return t.exercises
-      .filter((e) => !e.archived && (!muscle || e.muscle === muscle) && (!needle || e.name.toLowerCase().includes(needle)))
+      .filter((e) => !e.archived && (!muscle || e.muscle === muscle) && matchesExercise(e.name, needle))
       .map((e) => ({ e, last: t.history.get(e.id)?.at(-1) ?? null }))
       // Exercises you actually do float to the top.
       .sort((a, b) => (b.last?.startedAt ?? 0) - (a.last?.startedAt ?? 0) || a.e.name.localeCompare(b.e.name));

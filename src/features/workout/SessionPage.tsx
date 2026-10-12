@@ -11,9 +11,11 @@ import { formatInt } from '../../lib/format';
 import { formatWeight, round, toDisplayWeight } from '../../lib/units';
 import { useOnline } from '../../pwa/platform';
 import { useSyncState } from '../../sync/manager';
-import { createRoutine, discardWorkout, routineExercise } from './actions';
+import { createRoutine, discardWorkout, repeatWorkout, routineExercise } from './actions';
+import { update } from '../../db/repo';
+import { MergeWorkoutSheet } from './MergeWorkoutSheet';
 import { setLabel } from './gym/SetTable';
-import { useTraining } from './useTraining';
+import { planContext, useTraining } from './useTraining';
 import './workout.css';
 
 /** A finished workout. With `celebrate`, it's the summary shown right after Finish. */
@@ -26,6 +28,7 @@ export function SessionPage({ profile, celebrate = false }: { profile: Profile; 
   const pending = usePendingSyncCount() ?? 0;
   const online = useOnline();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [merging, setMerging] = useState(false);
   const u = profile.weightUnit;
 
   if (!t) return <main className="page" />;
@@ -168,7 +171,31 @@ export function SessionPage({ profile, celebrate = false }: { profile: Profile; 
         </button>
       ) : null}
 
-      {!w.routineId && w.exercises.length > 0 && (
+      {!celebrate && (
+        <div className="btn-row">
+          <Link to={`/workout/session/${w.id}/edit`} className="btn">
+            <Icon name="edit" /> Edit
+          </Link>
+          <button className="btn" onClick={() => setMerging(true)}>
+            <Icon name="link" /> Combine
+          </button>
+        </div>
+      )}
+      {!celebrate && w.exercises.length > 0 && (
+        <button
+          className="btn btn-primary btn-block"
+          onClick={async () => {
+            if (t.active) toast('Finish the workout in progress first — taking you to it');
+            else await repeatWorkout(w, t.exMap, t.history, planContext(profile));
+            navigate('/gym');
+          }}
+        >
+          <Icon name="refresh" /> Do this workout again
+        </button>
+      )}
+      {merging && <MergeWorkoutSheet t={t} w={w} onClose={() => setMerging(false)} />}
+
+      {w.exercises.length > 0 && (
         <button
           className="btn btn-block"
           onClick={async () => {
@@ -189,7 +216,7 @@ export function SessionPage({ profile, celebrate = false }: { profile: Profile; 
           }}
         >
           <Icon name="plus" />
-          Save as routine
+          {w.routineId ? 'Save as a new routine' : 'Save as routine'}
         </button>
       )}
 
@@ -202,7 +229,7 @@ export function SessionPage({ profile, celebrate = false }: { profile: Profile; 
             className="btn btn-danger"
             onClick={async () => {
               await discardWorkout(w.id);
-              toast('Workout deleted');
+              toast('Workout deleted', { label: 'Undo', run: () => void update('workouts', w.id, { deletedAt: null }) });
               navigate('/workout', { replace: true });
             }}
           >

@@ -9,6 +9,7 @@ import { estimateMinutes } from '../../lib/calc/training';
 import { newId } from '../../lib/id';
 import { deleteRoutine, routineExercise, saveRoutine, startWorkout } from './actions';
 import { ExercisePicker } from './ExercisePicker';
+import { combineRoutines } from './logic';
 import { MiniStepper } from './MiniStepper';
 import { MUSCLE_LABEL, planContext, useTraining } from './useTraining';
 import './workout.css';
@@ -201,6 +202,14 @@ export function RoutineEditor({ profile }: { profile: Profile }) {
           onPick={(ex) => {
             setExercises([...exs, routineExercise(ex.id)]);
             setPicking(false);
+          }}
+          routines={t.routines.filter((r) => r.id !== routine.id)}
+          onPickRoutine={(other) => {
+            // Copy the other routine's exercises in (with their sets/reps/rest), skipping ones already here.
+            const merged = combineRoutines([{ ...routine, exercises: exs }, other]);
+            if (merged) setExercises(merged.exercises);
+            setPicking(false);
+            toast(`Added ${other.name}’s exercises`);
           }}
         />
       )}

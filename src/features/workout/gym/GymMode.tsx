@@ -5,6 +5,7 @@ import { Icon } from '../../../components/Icon';
 import { useToast } from '../../../components/Toast';
 import type { Profile, Workout, WorkoutExercise } from '../../../db/types';
 import { checkSetPB, lastSession, PB_LABEL, workingSets } from '../../../lib/calc/training';
+import { plural } from '../../../lib/format';
 import { formatWeight } from '../../../lib/units';
 import { haptic } from '../../../pwa/platform';
 import { useWakeLock } from '../../../pwa/wakeLock';
@@ -267,6 +268,14 @@ function ActiveWorkout({ t, workout, profile }: { t: Training; workout: Workout;
             setSheet(null);
             await A.addExerciseToWorkout(workout.id, ex, t.history, ctx);
             setIndex(workout.exercises.length);
+          }}
+          routines={t.routines}
+          onPickRoutine={async (r) => {
+            setSheet(null);
+            const first = workout.exercises.length;
+            await A.addRoutineToWorkout(workout.id, r, t.exMap, t.history, ctx);
+            toast(`Added ${r.name} — ${plural(r.exercises.length, 'exercise')}`);
+            setIndex(first);
           }}
         />
       )}

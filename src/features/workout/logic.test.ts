@@ -143,3 +143,95 @@ describe('gym mode flow', () => {
     expect(L.afterSetCompleted(w, 0)).toEqual({ index: 0, rest: false });
   });
 });
+
+describe('combining workouts', () => {
+  const mk = (id: string, name: string, startedAt: number, minutes: number, exs: [string, number[]][], routineId: string | null = null): Workout => ({
+    id, name, routineId, date: '2026-10-12', startedAt, endedAt: startedAt + minutes * 60_000, notes: null, createdAt: 1, updatedAt: 1, deletedAt: null,
+    exercises: exs.map(([exerciseId, ws], i) => ({ id: `${id}-e${i}`, exerciseId, supersetGroup: null, restSec: 90, repMin: 8, repMax: 12, target: null, notes: null,
+      sets: ws.map((kg, k) => ({ id: `${id}-${i}-${k}`, kind: 'normal' as const, weightKg: kg, reps: 8, rpe: null, done: true, completedAt: startedAt })) })),
+  });
+
+  it('merges two sessions: joins shared exercises, adds durations, keeps the earlier start', () => {
+    const am = mk('a', 'Push', Date.parse('2026-10-12T07:00:00'), 40, [['ex-bench-press', [60, 60]], ['ex-lateral-raise', [8]]], 'r-push');
+    const pm = mk('b', 'Abs', Date.parse('2026-10-12T18:00:00'), 20, [['ex-bench-press', [62.5]], ['ex-plank', [0, 0]]]);
+    const m = L.mergeWorkouts(pm, am); // order doesn't matter
+    expect(m.id).toBe('b');
+    expect(m.name).toBe('Push + Abs');
+    expect(m.routineId).toBe('r-push'); // the later session has no routine, so the earlier one's counts
+    expect(L.mergeWorkouts(am, { ...pm, routineId: 'r-abs' }).routineId).toBe('r-abs');
+    expect(m.startedAt).toBe(am.startedAt);
+    expect((m.endedAt! - m.startedAt) / 60_000).toBe(60);
+    expect(m.exercises.map((e) => e.exerciseId)).toEqual(['ex-bench-press', 'ex-lateral-raise', 'ex-plank']);
+    expect(m.exercises[0].sets.map((s) => s.weightKg)).toEqual([60, 60, 62.5]);
+    expect(am.exercises[0].sets).toHaveLength(2); // inputs untouched
+  });
+
+  it('combines routines without repeating exercises, and keeps supersets apart', () => {
+    const r = (id: string, name: string, ids: string[], group: string | null = null): import('../../db/types').Routine => ({
+      id, name, notes: null, sortOrder: 0, createdAt: 1, updatedAt: 1, deletedAt: null,
+      exercises: ids.map((exerciseId) => ({ key: exerciseId, exerciseId, sets: 3, warmupSets: 0, repMin: 8, repMax: 12, restSec: 60, supersetGroup: group })),
+    });
+    const c = L.combineRoutines([r('p', 'Push', ['ex-a', 'ex-b'], 'g1'), r('c', 'Core', ['ex-b', 'ex-c', 'ex-d'], 'g1')])!;
+    expect(c.name).toBe('Push + Core');
+    expect(c.id).toBe('c'); // rotation continues after the last routine
+    expect(c.exercises.map((e) => e.exerciseId)).toEqual(['ex-a', 'ex-b', 'ex-c', 'ex-d']);
+    expect(c.exercises[0].supersetGroup).not.toBe(c.exercises[2].supersetGroup); // was the same id in both routines
+    expect(L.combinedName(['Workout', 'Workout'])).toBe('Workout');
+  });
+
+  it('offers same-day workouts first when merging', () => {
+    const w = mk('w', 'A', Date.parse('2026-10-12T10:00:00'), 30, []);
+    const other = { ...mk('x', 'B', Date.parse('2026-10-11T10:00:00'), 30, []), date: '2026-10-11' };
+    const same = mk('y', 'C', Date.parse('2026-10-12T07:00:00'), 30, []);
+    expect(L.mergeCandidates(w, [w, other, same]).map((x) => x.id)).toEqual(['y', 'x']);
+  });
+
+  it('merge in the database is undoable', async () => {
+    const a = await db.workouts.add(mk('a1', 'Push', Date.parse('2026-10-12T07:00:00'), 40, [['ex-bench-press', [60]]]));
+    const b = await db.workouts.add(mk('b1', 'Pull', Date.parse('2026-10-12T08:00:00'), 30, [['ex-barbell-row', [50]]]));
+    const undo = await A.mergeWorkoutsInto(a, b);
+    expect((await db.workouts.get(a))!.exercises).toHaveLength(2);
+    expect((await db.workouts.get(b))!.deletedAt).not.toBeNull();
+    await undo!();
+    expect((await db.workouts.get(a))!.exercises).toHaveLength(1);
+    expect((await db.workouts.get(a))!.name).toBe('Push');
+    expect((await db.workouts.get(b))!.deletedAt).toBeNull();
+  });
+
+  it('logs a past workout and edits its details', async () => {
+    const w = await A.logPastWorkout('2026-10-10', 'Legs', 50);
+    expect(w.endedAt! - w.startedAt).toBe(50 * 60_000);
+    await A.addDoneExercise(w.id, bench, new Map(), ctx);
+    await A.editWorkoutDetails(w.id, { date: '2026-10-09', minutes: 65, name: 'Leg day' });
+    const after = (await db.workouts.get(w.id))!;
+    expect(after).toMatchObject({ date: '2026-10-09', name: 'Leg day' });
+    expect(new Date(after.startedAt).getDate()).toBe(9);
+    expect((after.endedAt! - after.startedAt) / 60_000).toBe(65);
+    expect(after.exercises[0].sets.every((s) => s.done)).toBe(true);
+    expect(buildHistory([after]).get(bench.id)).toHaveLength(1);
+  });
+});
+
+describe('gym conveniences', () => {
+  it('carries a completed weight to the empty sets after it (same type only)', () => {
+    const sets = (['warmup', 'warmup', 'normal', 'normal', 'normal'] as const).map((kind, i) => ({ id: `s${i}`, kind, weightKg: 0, reps: 8, rpe: null, done: false, completedAt: null }));
+    const w: Workout = { id: 'w', name: 'W', routineId: null, date: '2026-10-12', startedAt: 0, endedAt: null, notes: null, createdAt: 1, updatedAt: 1, deletedAt: null,
+      exercises: [{ id: 'e', exerciseId: 'ex-bench-press', supersetGroup: null, restSec: 90, repMin: 6, repMax: 8, target: null, notes: null, sets }] };
+    sets[0].weightKg = 40;
+    L.completeSet(w, 'e', 's0');
+    expect(w.exercises[0].sets.map((s) => s.weightKg)).toEqual([40, 40, 0, 0, 0]);
+    w.exercises[0].sets[2].weightKg = 80;
+    w.exercises[0].sets[4].weightKg = 70; // already set by hand — left alone
+    L.completeSet(w, 'e', 's2');
+    expect(w.exercises[0].sets.map((s) => s.weightKg)).toEqual([40, 40, 80, 80, 70]);
+  });
+
+  it('finds exercises by gym shorthand', () => {
+    expect(L.matchesExercise('Dumbbell Bench Press', 'db bench')).toBe(true);
+    expect(L.matchesExercise('Overhead Press', 'ohp')).toBe(true);
+    expect(L.matchesExercise('Romanian Deadlift', 'RDL')).toBe(true);
+    expect(L.matchesExercise('Pull-up', 'pullup')).toBe(true);
+    expect(L.matchesExercise('Pull-up', 'pull up')).toBe(true);
+    expect(L.matchesExercise('Bench Press', 'squat')).toBe(false);
+  });
+});

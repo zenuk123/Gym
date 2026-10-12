@@ -38,6 +38,7 @@ import { ReviewPage } from './features/review/ReviewPage';
 import { AiSettingsPage } from './features/coach/AiSettingsPage';
 import { HealthImportPage } from './features/more/health/HealthImportPage';
 import { DevicesPage } from './features/more/devices/DevicesPage';
+import { WorkoutEditor } from './features/workout/WorkoutEditor';
 import { NativeReminderTaps } from './features/more/devices/NativeReminderTaps';
 import { FriendsPage } from './features/friends/FriendsPage';
 
@@ -75,6 +76,7 @@ export function App() {
             <Route path="/workout" element={<WorkoutPage profile={profile} />} />
             <Route path="/workout/routine/:id" element={<RoutineEditor profile={profile} />} />
             <Route path="/workout/session/:id" element={<SessionPage profile={profile} />} />
+            <Route path="/workout/session/:id/edit" element={<WorkoutEditor profile={profile} />} />
             <Route path="/workout/summary/:id" element={<SessionPage profile={profile} celebrate />} />
             <Route path="/workout/history" element={<HistoryPage profile={profile} />} />
             <Route path="/workout/exercises" element={<ExerciseLibrary profile={profile} />} />
