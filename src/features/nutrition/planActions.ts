@@ -1,6 +1,6 @@
 import { db } from '../../db/db';
 import { create, remove, update } from '../../db/repo';
-import type { PlanItem, SavedMeal } from '../../db/types';
+import type { FoodLog, PlanItem, SavedMeal } from '../../db/types';
 import { addDays } from '../../lib/dates';
 import { planMeal, type NewPlanItem } from '../../lib/calc/plan';
 import type { MealSlot } from '../../db/types';
@@ -29,6 +29,21 @@ export async function markEaten(p: PlanItem) {
 export async function unmarkEaten(p: PlanItem) {
   if (p.loggedId) await remove('foodLogs', p.loggedId);
   await update('planItems', p.id, { loggedId: null });
+}
+
+/**
+ * Delete a food-log entry. If it was logged from the plan, the planned meal goes back to
+ * "not eaten" (otherwise it would vanish from Today's plan with no way to mark it again).
+ * Returns an undo that restores both.
+ */
+export async function deleteFoodLog(log: Pick<FoodLog, 'id' | 'date'>): Promise<() => Promise<void>> {
+  const linked = (await db.planItems.where('date').equals(log.date).toArray()).filter((p) => p.deletedAt === null && p.loggedId === log.id);
+  await remove('foodLogs', log.id);
+  for (const p of linked) await update('planItems', p.id, { loggedId: null });
+  return async () => {
+    await update('foodLogs', log.id, { deletedAt: null });
+    for (const p of linked) await update('planItems', p.id, { loggedId: log.id });
+  };
 }
 
 /** Copy a planned item to other days (e.g. same breakfast all week). */

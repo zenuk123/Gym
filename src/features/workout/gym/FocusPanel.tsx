@@ -100,19 +100,32 @@ function SetControls({
   const [draft, setDraft] = useState<string | null>(null);
   useEffect(() => setDraft(null), [set.id]);
 
+  /** The typed weight in kg, or null if nothing (valid) is being typed. */
+  const draftKg = () => {
+    const n = draft === null ? null : parseDecimal(draft);
+    return n !== null && n >= 0 && n < 1000 ? fromDisplayWeight(n, unit) : null;
+  };
   const commitWeight = () => {
-    if (draft === null) return;
-    const n = parseDecimal(draft);
-    if (n !== null && n >= 0 && n < 1000) save({ weightKg: fromDisplayWeight(n, unit) });
+    const kg = draftKg();
+    if (kg !== null) save({ weightKg: kg });
     setDraft(null);
   };
+  // Steppers work from the value in the database, not from this render: a tap right after typing
+  // (whose save is still in flight) or two quick taps would otherwise use a stale weight. iOS also
+  // doesn't always blur the field when a button is tapped, so what's typed is used directly.
   const stepW = (n: 1 | -1) => {
     haptic(5);
-    save({ weightKg: stepWeight(set.weightKg, n, exercise.incrementKg, unit) });
+    const typed = draftKg();
+    setDraft(null);
+    void A.editSet(workout.id, ex.id, set.id, (s) => ({ weightKg: stepWeight(typed ?? s.weightKg, n, exercise.incrementKg, unit) }));
+  };
+  const complete = () => {
+    commitWeight();
+    onComplete();
   };
   const stepR = (n: 1 | -1) => {
     haptic(5);
-    save({ reps: Math.max(0, set.reps + n) });
+    void A.editSet(workout.id, ex.id, set.id, (s) => ({ reps: Math.max(0, s.reps + n) }));
   };
   const normals = ex.sets.filter((s) => s.kind === 'normal').length;
   const label = setLabel(ex, set);
@@ -183,7 +196,7 @@ function SetControls({
           ))}
         </div>
       )}
-      <button className="btn btn-primary btn-lg btn-block complete-btn" onClick={onComplete} disabled={!set.done && set.reps <= 0}>
+      <button className="btn btn-primary btn-lg btn-block complete-btn" onClick={complete} disabled={!set.done && set.reps <= 0}>
         <Icon name="check" />
         {set.done ? 'Done editing' : 'Complete set'}
       </button>

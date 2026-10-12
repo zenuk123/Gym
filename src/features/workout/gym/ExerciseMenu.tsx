@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Icon } from '../../../components/Icon';
 import { Sheet } from '../../../components/Sheet';
 import type { Exercise, Workout, WorkoutExercise } from '../../../db/types';
+import { useCommitOnLeave } from '../../../lib/useCommitOnLeave';
 import * as A from '../actions';
 
 /** Per-exercise options in Gym Mode: notes, reorder, remove, history. */
@@ -24,6 +25,7 @@ export function ExerciseMenu({
   onRemoved: () => void;
 }) {
   const [notes, setNotes] = useState(ex.notes ?? '');
+  const saveNotes = useCommitOnLeave((v: string) => void A.setExerciseNotes(workout.id, ex.id, v));
   const [confirm, setConfirm] = useState(false);
   const done = ex.sets.some((s) => s.done);
 
@@ -31,7 +33,6 @@ export function ExerciseMenu({
     <Sheet
       title={exercise.name}
       onClose={() => {
-        if ((ex.notes ?? '') !== notes) void A.setExerciseNotes(workout.id, ex.id, notes);
         onClose();
       }}
     >
@@ -43,8 +44,10 @@ export function ExerciseMenu({
           rows={3}
           placeholder="Seat height 4, felt strong…"
           value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          onBlur={() => void A.setExerciseNotes(workout.id, ex.id, notes)}
+          onChange={(e) => {
+            setNotes(e.target.value);
+            saveNotes(e.target.value);
+          }}
         />
       </div>
       <div className="list">

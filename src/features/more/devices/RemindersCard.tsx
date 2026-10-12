@@ -4,7 +4,7 @@ import { Icon } from '../../../components/Icon';
 import { useToast } from '../../../components/Toast';
 import { useSyncState } from '../../../sync/manager';
 import { REMINDER_TEXT, type Reminder } from '../../../../supabase/functions/_shared/reminders';
-import { delivery, saveReminders, sendTestPush, turnOffPush, useReminders, useWebPushEndpoint } from './reminders';
+import { askNotificationPermission, delivery, saveReminders, sendTestPush, turnOffPush, useReminders, useWebPushEndpoint } from './reminders';
 
 // Monday first, stored as 0 = Sunday … 6 = Saturday.
 const DAYS = [
@@ -65,7 +65,13 @@ export function RemindersCard() {
         list.map((r) => (
           <div key={r.id} className="reminder">
             <label className="check-row">
-              <input type="checkbox" checked={r.enabled} onChange={(e) => patch(r.id, { enabled: e.target.checked })} disabled={how === 'install-first' || how === 'needs-account'} />
+              <input
+                type="checkbox"
+                checked={r.enabled}
+                onChange={(e) => {
+                  if (e.target.checked) askNotificationPermission();
+                  patch(r.id, { enabled: e.target.checked });
+                }} disabled={how === 'install-first' || how === 'needs-account'} />
               <span className="grow">
                 <b>{REMINDER_TEXT[r.id].label}</b>
                 <span className="desc">{REMINDER_TEXT[r.id].body}</span>

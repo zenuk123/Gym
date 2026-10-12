@@ -8,7 +8,7 @@ import { db } from '../../db/db';
 import { useFoodLogs } from '../../db/hooks';
 import { create } from '../../db/repo';
 import type { FoodLog, MealItem, MealSlot, Profile } from '../../db/types';
-import { addDays, relativeDay, todayISO } from '../../lib/dates';
+import { addDays, relativeDay, todayISO, isLoggableDate } from '../../lib/dates';
 import { formatInt } from '../../lib/format';
 import { newId } from '../../lib/id';
 import { macroTargets, sumIntake } from '../../lib/intake';
@@ -26,7 +26,10 @@ export function NutritionPage({ profile }: { profile: Profile }) {
   const today = useToday();
   const toast = useToast();
   const navigate = useNavigate();
-  const [date, setDate] = useState(today);
+  // null = "today", so a page left open overnight moves on to the new day instead of logging to yesterday.
+  const [picked, setPicked] = useState<string | null>(null);
+  const date = picked ?? today;
+  const setDate = (d: string) => setPicked(d === today ? null : d);
   const [adding, setAdding] = useState<{ slot?: MealSlot } | null>(null);
   const [editing, setEditing] = useState<FoodLog | null>(null);
   const [ideas, setIdeas] = useState(false);
@@ -93,7 +96,7 @@ export function NutritionPage({ profile }: { profile: Profile }) {
         </button>
         <label className="day-label">
           {relativeDay(date, today)}
-          <input type="date" value={date} max={todayISO()} onChange={(e) => e.target.value && setDate(e.target.value)} aria-label="Pick a date" />
+          <input type="date" value={date} max={todayISO()} onChange={(e) => isLoggableDate(e.target.value, today) && setDate(e.target.value)} aria-label="Pick a date" />
         </label>
         <button className="icon-btn" onClick={() => setDate(addDays(date, 1))} disabled={date >= today} aria-label="Next day">
           <Icon name="chevronRight" />

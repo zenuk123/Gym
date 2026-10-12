@@ -17,6 +17,7 @@ import { NutritionTabs } from './NutritionTabs';
 import { PriceSheet } from './PriceSheet';
 import { CartExportSheet } from './CartExportSheet';
 import './nutrition.css';
+import { plural } from '../../lib/format';
 
 /** Shopping list for a plan week, grouped by aisle. Plan items are generated; your own additions are kept. */
 export function ShoppingPage({ profile }: { profile: Profile }) {
@@ -27,7 +28,10 @@ export function ShoppingPage({ profile }: { profile: Profile }) {
   const [view, setView] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const toast = useToast();
-  const [weekStart, setWeekStart] = useState(startOfWeek(today));
+  // null = this week (follows the calendar if the app stays open past Sunday night).
+  const [pickedWeek, setPickedWeek] = useState<string | null>(null);
+  const weekStart = pickedWeek ?? startOfWeek(today);
+  const setWeekStart = (w: string) => setPickedWeek(w === startOfWeek(today) ? null : w);
   const plan = usePlanItems(weekStart, addDays(weekStart, 6));
   const list = useShopping(weekStart);
   const foods = useFoods();
@@ -70,7 +74,7 @@ export function ShoppingPage({ profile }: { profile: Profile }) {
       if (id) await update('shopping', id, data);
       else await create('shopping', { ...data, weekStart, source: 'plan' });
     }
-    toast(lines.length ? `${lines.length} items from your plan` : 'Nothing planned this week yet');
+    toast(lines.length ? `${plural(lines.length, 'item')} from your plan` : 'Nothing planned this week yet');
   }
 
   async function addManual() {

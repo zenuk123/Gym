@@ -8,7 +8,7 @@ import { create, remove, update } from '../../db/repo';
 import { MEASUREMENT_SITES, type Exercise, type LiftMetric, type MeasurementSite, type Profile, type UserGoal } from '../../db/types';
 import { currentLiftBest } from '../../lib/calc/goals';
 import { SITE_LABEL, siteSeries } from '../../lib/calc/measurements';
-import { todayISO } from '../../lib/dates';
+import { todayISO, isISODate } from '../../lib/dates';
 import { formatWeight, fromDisplayLength, fromDisplayWeight, parseDecimal, round, toDisplayLength, toDisplayWeight } from '../../lib/units';
 import { ExercisePicker } from '../workout/ExercisePicker';
 import type { Training } from '../workout/useTraining';
@@ -37,7 +37,7 @@ export function GoalSheet({ profile, t, editing, onClose }: { profile: Profile; 
       : (siteSeries(measurements, site).at(-1)?.value ?? null);
   const start = editing ? editing.startValue : currentStart;
   const tNum = parseDecimal(target);
-  const valid = tNum !== null && tNum > 0 && (kind === 'measurement' || exercise !== null) && (start === null || Math.abs(fromDisp(tNum) - start) > 0.01);
+  const valid = tNum !== null && tNum > 0 && (kind === 'measurement' || exercise !== null) && (start === null || Math.abs(fromDisp(tNum) - start) > 0.01) && (targetDate === '' || isISODate(targetDate));
   const unitLabel = kind === 'lift' ? wu : lu;
 
   async function save() {

@@ -99,4 +99,10 @@ describe('lastNight', () => {
     expect(lastNight(logs, '2026-03-02')?.durationMin).toBe(420);
     expect(lastNight(logs, '2026-03-03')).toBeNull();
   });
+
+  it('formatDuration rounds the total, never "7h 60m"', () => {
+    expect(formatDuration(479.6)).toBe('8h 00m');
+    expect(formatDuration(479.4)).toBe('7h 59m');
+    expect(formatDuration(425)).toBe('7h 05m');
+  });
 });

@@ -5,6 +5,8 @@ import { SubHeader } from '../../components/PageHeader';
 import { useToast } from '../../components/Toast';
 import { createBackup, foodCSV, resetDevice, restoreBackup, saveFile, sleepCSV, stampedName, waterCSV, weightsCSV, workoutsCSV } from '../../lib/backup';
 import { useSyncState } from '../../sync/manager';
+import { update } from '../../db/repo';
+import { PROFILE_ID, type Profile } from '../../db/types';
 import { exportablePhotos } from '../progress/photos/photoStore';
 
 export function DataSettings() {
@@ -13,6 +15,7 @@ export function DataSettings() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [backupProfile, setBackupProfile] = useState<Profile | null>(null);
 
   const run = (fn: () => Promise<void>) => () => {
     setError(null);
@@ -22,7 +25,8 @@ export function DataSettings() {
   async function onImport(file: File) {
     setError(null);
     try {
-      const { restored, skipped } = await restoreBackup(JSON.parse(await file.text()));
+      const { restored, skipped, keptProfile } = await restoreBackup(JSON.parse(await file.text()));
+      setBackupProfile(keptProfile);
       toast(`Restored ${restored} record${restored === 1 ? '' : 's'}${skipped ? ` · ${skipped} already up to date` : ''}`);
     } catch (err) {
       setError(err instanceof SyntaxError ? 'That file is not valid JSON.' : err instanceof Error ? err.message : String(err));
@@ -72,6 +76,31 @@ export function DataSettings() {
           e.target.value = '';
         }}
       />
+
+      {backupProfile && (
+        <section className="card">
+          <h2 className="chart-title">Use the profile from your backup?</h2>
+          <p className="muted" style={{ fontSize: 14 }}>
+            This phone kept its own profile ({backupProfile.name ? `${backupProfile.name}, ` : ''}targets, units and goal) because it was set up more recently than the backup.
+          </p>
+          <div className="btn-row">
+            <button
+              className="btn btn-primary"
+              onClick={run(async () => {
+                const { id: _id, createdAt: _c, updatedAt: _u, deletedAt: _d, ...fields } = backupProfile;
+                await update('profile', PROFILE_ID, fields);
+                setBackupProfile(null);
+                toast('Profile restored from your backup');
+              })}
+            >
+              Use backup profile
+            </button>
+            <button className="btn" onClick={() => setBackupProfile(null)}>
+              Keep this one
+            </button>
+          </div>
+        </section>
+      )}
 
       <h2 className="section-title">Import</h2>
       <div className="list">

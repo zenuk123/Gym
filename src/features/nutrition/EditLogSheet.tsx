@@ -4,10 +4,11 @@ import { Segmented } from '../../components/Segmented';
 import { Sheet } from '../../components/Sheet';
 import { useToast } from '../../components/Toast';
 import { db } from '../../db/db';
-import { create, remove, update } from '../../db/repo';
+import { create, update } from '../../db/repo';
 import type { Food, FoodLog, MealSlot } from '../../db/types';
 import { describeAmount, nutritionFor } from '../../lib/calc/food';
 import { parseDecimal, round } from '../../lib/units';
+import { deleteFoodLog } from './planActions';
 import { MEALS } from './QuickAddSheet';
 import { useLiveQuery } from 'dexie-react-hooks';
 
@@ -27,7 +28,23 @@ export function EditLogSheet({ log, onClose }: { log: FoodLog; onClose: () => vo
   const byFood = !!food && log.amountG != null;
   const byMeal = log.savedMealId != null && log.servings != null && log.servings > 0;
 
+  // Same limits as adding: something to log, and not an obvious typo (10 kg / 100 servings).
+  const valid = (() => {
+    if (byFood) {
+      const g = parseDecimal(grams);
+      return g !== null && g > 0 && g <= 10_000;
+    }
+    if (byMeal) {
+      const sv = parseDecimal(servings);
+      return sv !== null && sv > 0 && sv <= 100;
+    }
+    const k = parseDecimal(kcal);
+    const p = parseDecimal(protein || '0');
+    return k !== null && k > 0 && k < 10_000 && p !== null && p >= 0 && p < 1_000; // as in Quick add
+  })();
+
   async function save() {
+    if (!valid) return;
     let patch: Partial<FoodLog> = { meal: slot };
     if (byFood) {
       const g = parseDecimal(grams);
@@ -77,7 +94,7 @@ export function EditLogSheet({ log, onClose }: { log: FoodLog; onClose: () => vo
           </div>
         </>
       )}
-      <button className="btn btn-primary btn-lg btn-block" onClick={() => void save()}>
+      <button className="btn btn-primary btn-lg btn-block" disabled={!valid} onClick={() => void save()}>
         Save
       </button>
       <div className="btn-row">
@@ -95,8 +112,8 @@ export function EditLogSheet({ log, onClose }: { log: FoodLog; onClose: () => vo
         <button
           className="btn btn-danger"
           onClick={async () => {
-            await remove('foodLogs', log.id);
-            toast(`Removed ${log.name}`, { label: 'Undo', run: () => void update('foodLogs', log.id, { deletedAt: null }) });
+            const undo = await deleteFoodLog(log);
+            toast(`Removed ${log.name}`, { label: 'Undo', run: () => void undo() });
             onClose();
           }}
         >

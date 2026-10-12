@@ -127,7 +127,11 @@ export function FoodEditor() {
   const serving = parseDecimal(f.servingG);
   const factor = basis === 'serving' ? (serving && serving > 0 ? 100 / serving : null) : 1;
   const nums = [f.kcal, f.protein, f.carbs || '0', f.fat || '0'].map(parseDecimal);
-  const valid = f.name.trim().length > 1 && nums.every((n) => n !== null && n >= 0) && factor !== null;
+  const numbersOk = nums.every((n) => n !== null && n >= 0) && factor !== null;
+  // Per 100 g nothing exceeds ~900 kcal (pure fat) or 100 g of macros — usually a per-pack number in the wrong box.
+  const per100 = numbersOk ? (nums as number[]).map((n) => n * factor!) : null;
+  const implausible = per100 !== null && (per100[0] > 950 || per100[1] + per100[2] + per100[3] > 105);
+  const valid = f.name.trim().length > 1 && numbersOk && !implausible;
 
   async function save() {
     if (!valid) return;
@@ -213,6 +217,7 @@ export function FoodEditor() {
         <NumberField label="Fibre (optional)" suffix="g" value={f.fibre} onChange={(v) => set('fibre', v)} />
         <NumberField label="Barcode (optional)" decimal={false} value={f.barcode} onChange={(v) => set('barcode', v)} />
       </div>
+      {implausible && <p className="error-text">That’s more than a food can hold per 100 {f.unit} — check whether the label numbers are per 100 {f.unit} or per serving.</p>}
       <button className="btn btn-primary btn-lg btn-block" disabled={!valid} onClick={() => void save()}>
         {existing ? 'Save food' : 'Create food'}
       </button>

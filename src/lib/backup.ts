@@ -1,7 +1,7 @@
 import { db } from '../db/db';
 import { enqueue } from '../db/repo';
 import { notifyLocalChange } from '../sync/signal';
-import { SYNC_TABLES, type SyncTable, type SyncTableMap } from '../db/types';
+import { SYNC_TABLES, type Profile, type SyncTable, type SyncTableMap } from '../db/types';
 import { toISODate } from './dates';
 
 /** Your data is yours: full JSON backup/restore plus CSV for spreadsheets. */
@@ -32,7 +32,17 @@ function isRecord(x: unknown): x is { id: string; updatedAt: number } {
  * Merge a backup into this device. Newer versions win (same rule as sync), so restoring
  * an old backup never overwrites newer data. Restored records are queued for cloud sync.
  */
-export async function restoreBackup(raw: unknown): Promise<{ restored: number; skipped: number }> {
+export interface RestoreResult {
+  restored: number;
+  skipped: number;
+  /**
+   * The backup's profile when this device's own profile was kept because it's newer — e.g. you set
+   * up the app on a new phone before restoring. The UI offers to use it instead.
+   */
+  keptProfile: Profile | null;
+}
+
+export async function restoreBackup(raw: unknown): Promise<RestoreResult> {
   const b = raw as Partial<Backup>;
   if (!b || b.format !== BACKUP_FORMAT || typeof b.tables !== 'object' || b.tables === null) {
     throw new Error("This doesn't look like a Fitness OS backup file.");
@@ -40,6 +50,7 @@ export async function restoreBackup(raw: unknown): Promise<{ restored: number; s
   if ((b.version ?? 0) > BACKUP_VERSION) throw new Error('This backup is from a newer version of the app. Update first.');
   let restored = 0;
   let skipped = 0;
+  let keptProfile: Profile | null = null;
   for (const t of SYNC_TABLES) {
     const rows = (b.tables as Record<string, unknown>)[t];
     if (!Array.isArray(rows)) continue;
@@ -52,6 +63,7 @@ export async function restoreBackup(raw: unknown): Promise<{ restored: number; s
         }
         const local = await table.get(rec.id);
         if (local && local.updatedAt >= rec.updatedAt) {
+          if (t === 'profile' && !(rec as unknown as Profile).deletedAt) keptProfile = rec as unknown as Profile;
           skipped++;
           continue;
         }
@@ -62,12 +74,15 @@ export async function restoreBackup(raw: unknown): Promise<{ restored: number; s
     });
   }
   if (restored) notifyLocalChange();
-  return { restored, skipped };
+  return { restored, skipped, keptProfile };
 }
 
 function csvCell(v: unknown): string {
   if (v === null || v === undefined) return '';
-  const s = String(v);
+  let s = String(v);
+  // Text starting with = + - @ is run as a formula by Excel/Sheets (names can come from Open Food
+  // Facts), so it's prefixed with ' — numbers like -0.4 stay numbers.
+  if (typeof v === 'string' && /^[=+\-@\t\r]/.test(s) && !/^-?\d+(\.\d+)?$/.test(s)) s = `'${s}`;
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 

@@ -10,7 +10,7 @@ import type { Profile } from '../../db/types';
 import { trainingSummary } from '../../lib/calc/analytics';
 import { weekStreak } from '../../lib/calc/training';
 import { addDays, daysBetween, formatDateShort } from '../../lib/dates';
-import { formatInt } from '../../lib/format';
+import { formatInt, plural } from '../../lib/format';
 import { formatWeight, round, toDisplayWeight } from '../../lib/units';
 import { useToday } from '../../lib/useToday';
 import { MUSCLE_LABEL, useTraining } from '../workout/useTraining';
@@ -81,7 +81,7 @@ export function TrainingAnalytics({ profile }: { profile: Profile }) {
           <section className="card">
             <h2 className="chart-title">Sessions per week</h2>
             <p className="chart-sub">
-              {onTarget} of {weeksInRange} weeks on your target of {profile.workoutsPerWeek} · current streak {weekStreak(t.finished, profile.workoutsPerWeek, today)} weeks
+              {onTarget} of {plural(weeksInRange, 'week')} on your target of {profile.workoutsPerWeek} · current streak {plural(weekStreak(t.finished, profile.workoutsPerWeek, today), 'week')}
             </p>
             <BarChart
               bars={s.weeks.map((w) => ({ key: w.weekStart, label: weekLabel(w.weekStart), title: `Week of ${formatDateShort(w.weekStart)}`, value: w.workouts }))}
@@ -129,7 +129,7 @@ export function TrainingAnalytics({ profile }: { profile: Profile }) {
                     <div className="grow">
                       <div className="title">{t.exMap.get(l.exerciseId)?.name}</div>
                       <div className="desc">
-                        {formatWeight(l.firstE1rm, u)} → {formatWeight(l.latestE1rm, u)} · {l.sessions} sessions
+                        {formatWeight(l.firstE1rm, u)} → {formatWeight(l.latestE1rm, u)} · {plural(l.sessions, 'session')}
                       </div>
                     </div>
                     <div className="lift-spark">

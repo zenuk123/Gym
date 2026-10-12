@@ -3,6 +3,7 @@ import { CardHead } from '../../../components/CardHead';
 import type { Profile } from '../../../db/types';
 import { daysBetween, startOfWeek } from '../../../lib/dates';
 import { defaultReviewWeek, useWeeklyReview } from '../../review/useWeeklyReview';
+import { plural } from '../../../lib/format';
 
 /** Shown on Sundays and Mondays: the week's habit score and the top focus, linking to the full review. */
 export function ReviewCard({ profile, today }: { profile: Profile; today: string }) {
@@ -22,7 +23,7 @@ export function ReviewCard({ profile, today }: { profile: Profile; today: string
           <small>/100</small>
         </span>
         <span className="muted" style={{ fontSize: 14 }}>
-          {r.training.workouts}/{r.training.target} workouts · {r.nutrition.daysLogged} days logged
+          {r.training.workouts}/{r.training.target} workouts · {plural(r.nutrition.daysLogged, 'day')} logged
           {r.training.pbs.length ? ` · ${r.training.pbs.length} PB${r.training.pbs.length === 1 ? '' : 's'}` : ''}
         </span>
       </div>

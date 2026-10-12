@@ -5,7 +5,7 @@ import { useToast } from '../../components/Toast';
 import { create, remove, update } from '../../db/repo';
 import { MEASUREMENT_SITES, siteKey, type LengthUnit, type Measurement, type MeasurementSite } from '../../db/types';
 import { SITE_LABEL } from '../../lib/calc/measurements';
-import { todayISO } from '../../lib/dates';
+import { isLoggableDate, todayISO } from '../../lib/dates';
 import { fromDisplayLength, parseDecimal, round, toDisplayLength } from '../../lib/units';
 
 const HINT: Record<MeasurementSite, string> = {
@@ -45,7 +45,7 @@ export function MeasurementSheet({
   const any = parsed.some(([, v]) => v !== null);
 
   async function save() {
-    if (invalid || !any) return;
+    if (invalid || !any || !isLoggableDate(date)) return;
     const data = Object.fromEntries(parsed.map(([s, v]) => [siteKey(s), v === null ? null : round(fromDisplayLength(v, unit), 1)])) as Pick<
       Measurement,
       `${MeasurementSite}Cm`
@@ -84,7 +84,7 @@ export function MeasurementSheet({
         })}
       </div>
       {invalid && <p className="error-text">Check the highlighted values.</p>}
-      <button className="btn btn-primary btn-lg btn-block" disabled={invalid || !any} onClick={() => void save()}>
+      <button className="btn btn-primary btn-lg btn-block" disabled={invalid || !any || !isLoggableDate(date)} onClick={() => void save()}>
         Save
       </button>
       {editing && (

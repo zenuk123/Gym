@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from '../db/db';
-import { create, update } from '../db/repo';
+import { create, saveProfile, update } from '../db/repo';
 import { createBackup, restoreBackup, toCSV } from './backup';
 
 beforeEach(async () => {
@@ -50,5 +50,33 @@ describe('workout CSV', () => {
         sets: [{ id: 's', kind: 'normal', weightKg: 60, reps: 8, rpe: 8, done: true, completedAt: 1 }] }],
     });
     expect(await workoutsCSV()).toBe('date,workout,exercise,set,type,weight_kg,reps,rpe,duration_min\n2026-01-01,Push,Bench Press,1,normal,60,8,8,60\n');
+  });
+
+  it('reports the backup profile when this device kept a newer one (new phone set up first)', async () => {
+    const base = { sex: 'male' as const, birthYear: 1990, heightCm: 180, activityLevel: 'moderate' as const, goal: 'lose' as const, startWeightKg: 90, startDate: '2026-01-01', targetWeightKg: 80, carbTarget: null, fatTarget: null, waterTargetMl: 2500, workoutsPerWeek: 3, weightUnit: 'kg' as const, lengthUnit: 'cm' as const, proteinTarget: 180 };
+    await saveProfile({ ...base, name: 'Old phone', calorieTarget: 2100 });
+    const backup = JSON.parse(JSON.stringify(await createBackup()));
+    await db.delete();
+    await db.open();
+    await new Promise((r) => setTimeout(r, 2));
+    await saveProfile({ ...base, name: 'New phone', calorieTarget: 2500 });
+    const res = await restoreBackup(backup);
+    expect(res.keptProfile?.name).toBe('Old phone');
+    expect((await db.profile.get('me'))!.name).toBe('New phone');
+    // Restoring onto an empty device restores the profile itself.
+    await db.delete();
+    await db.open();
+    expect((await restoreBackup(backup)).keptProfile).toBeNull();
+    expect((await db.profile.get('me'))!.name).toBe('Old phone');
+  });
+
+  it('CSV neutralises formula-looking text but keeps numbers', () => {
+    const csv = toCSV([{ a: '=HYPERLINK("x")', b: -0.4, c: '-5', d: '@SUM(A1)' }], [
+      { header: 'a', get: (r) => r.a },
+      { header: 'b', get: (r) => r.b },
+      { header: 'c', get: (r) => r.c },
+      { header: 'd', get: (r) => r.d },
+    ]);
+    expect(csv.split('\n')[1]).toBe(`"'=HYPERLINK(""x"")",-0.4,-5,'@SUM(A1)`);
   });
 });

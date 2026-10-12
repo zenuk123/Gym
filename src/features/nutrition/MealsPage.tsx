@@ -6,7 +6,7 @@ import { SubHeader } from '../../components/PageHeader';
 import { Segmented } from '../../components/Segmented';
 import { useToast } from '../../components/Toast';
 import { useSavedMeals } from '../../db/hooks';
-import { create, remove, update } from '../../db/repo';
+import { create, remove, update, mutate } from '../../db/repo';
 import type { MealItem, MealSlot, SavedMeal } from '../../db/types';
 import { mealItemFrom, mealPerServing, mealTotal, rescaleItem, scaleNutrients } from '../../lib/calc/food';
 import { Sheet } from '../../components/Sheet';
@@ -17,6 +17,7 @@ import { MiniStepper } from '../workout/MiniStepper';
 import { AddFoodSheet } from './AddFoodSheet';
 import { MEALS, mealForNow } from './QuickAddSheet';
 import './nutrition.css';
+import { useCommitOnLeave } from '../../lib/useCommitOnLeave';
 
 /** Edit a recipe / saved meal: ingredients, portions, method, time and diet tags. */
 export function MealEditor() {
@@ -30,6 +31,9 @@ export function MealEditor() {
   const [name, setName] = useState<string | null>(null);
   const [prep, setPrep] = useState<string | null>(null);
   const meal = meals?.find((m) => m.id === id);
+  const saveSteps = useCommitOnLeave((text: string) => {
+    if (id) void update('meals', id, { steps: text.split('\n').map((l) => l.trim()).filter(Boolean) });
+  });
   if (!meals) return <main className="page" />;
   if (!meal) {
     return (
@@ -112,14 +116,13 @@ export function MealEditor() {
               </div>
               {it.grams > 0 && (
                 <div className="grams-input input-wrap">
-                  <input
-                    inputMode="decimal"
-                    defaultValue={it.grams}
-                    aria-label={`${it.name} grams`}
-                    onBlur={(e) => {
-                      const g = parseDecimal(e.target.value);
-                      if (g !== null && g > 0 && g !== it.grams) setItems(meal.items.map((x) => (x.key === it.key ? rescaleItem(x, g) : x)));
-                    }}
+                  <GramsInput
+                    item={it}
+                    // Applied to the stored recipe, not this render's copy: a pending edit that lands after
+                    // the ingredient was removed must not bring it back.
+                    onCommit={(g) =>
+                      void mutate('meals', meal.id, (m) => ({ ...m, items: m.items.map((x) => (x.key === it.key && x.grams !== g ? rescaleItem(x, g) : x)) }))
+                    }
                   />
                   <span className="suffix">g</span>
                 </div>
@@ -147,7 +150,7 @@ export function MealEditor() {
           rows={5}
           defaultValue={(meal.steps?.length ? meal.steps : (meal.notes ?? '').split('\n')).join('\n')}
           placeholder={'Cook the rice.\nFry the chicken for 6 minutes a side.\nServe with the veg.'}
-          onBlur={(e) => save({ steps: e.target.value.split('\n').map((l) => l.trim()).filter(Boolean) })}
+          onChange={(e) => saveSteps(e.target.value)}
         />
       </div>
       <div className="field-row">
@@ -244,4 +247,13 @@ export function LogMealSheet({ meal, date, onClose }: { meal: SavedMeal; date: s
       </button>
     </Sheet>
   );
+}
+
+/** Grams for one ingredient; saves while you type (and when you leave), not only on blur. */
+function GramsInput({ item, onCommit }: { item: MealItem; onCommit: (grams: number) => void }) {
+  const commit = useCommitOnLeave((v: string) => {
+    const g = parseDecimal(v);
+    if (g !== null && g > 0 && g <= 10_000 && g !== item.grams) onCommit(g);
+  });
+  return <input inputMode="decimal" defaultValue={item.grams} aria-label={`${item.name} grams`} onChange={(e) => commit(e.target.value)} />;
 }

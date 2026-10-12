@@ -15,7 +15,11 @@ export function sleepDuration(bedTime: string, wakeTime: string): number {
   return d <= 0 ? d + 24 * 60 : d;
 }
 
-export const formatDuration = (min: number) => `${Math.floor(min / 60)}h ${String(Math.round(min % 60)).padStart(2, '0')}m`;
+/** "7h 05m". Rounds the total first, so 479.6 min is "8h 00m", never "7h 60m". */
+export function formatDuration(min: number): string {
+  const m = Math.round(min);
+  return `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, '0')}m`;
+}
 
 export interface SleepSummary {
   nights: number;

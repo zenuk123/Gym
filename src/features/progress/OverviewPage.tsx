@@ -7,7 +7,7 @@ import type { Profile } from '../../db/types';
 import { nutritionSummary, trainingSummary } from '../../lib/calc/analytics';
 import { dailySeries, windowAverage } from '../../lib/calc/weight';
 import { addDays, relativeDay } from '../../lib/dates';
-import { formatInt } from '../../lib/format';
+import { formatInt, plural } from '../../lib/format';
 import { formatWeight } from '../../lib/units';
 import { useToday } from '../../lib/useToday';
 import { useTraining } from '../workout/useTraining';
@@ -115,7 +115,7 @@ export function OverviewPage({ profile }: { profile: Profile }) {
         <Link to="/progress/photos" className="list-row">
           <div className="grow">
             <div className="title">Progress photos</div>
-            <div className="desc">{lastPhoto ? `${photos!.length} photos · latest ${relativeDay(lastPhoto.date, today).toLowerCase()}` : 'None yet'}</div>
+            <div className="desc">{lastPhoto ? `${plural(photos!.length, 'photo')} · latest ${relativeDay(lastPhoto.date, today).toLowerCase()}` : 'None yet'}</div>
           </div>
           <span className="trail">
             <Icon name="chevronRight" />

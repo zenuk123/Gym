@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Icon } from '../../components/Icon';
 import { HeightField } from '../../components/HeightField';
 import { NumberField, TextField } from '../../components/NumberField';
@@ -7,6 +7,7 @@ import { InstallBanner } from '../../components/InstallBanner';
 import { create, saveProfile } from '../../db/repo';
 import type { ActivityLevel, Goal, LengthUnit, Sex, WeightUnit } from '../../db/types';
 import { ACTIVITY_LEVELS, GOALS, suggestTargets } from '../../lib/calc/nutrition';
+import { restoreBackup } from '../../lib/backup';
 import { todayISO } from '../../lib/dates';
 import { formatInt } from '../../lib/format';
 import { fromDisplayWeight, parseDecimal, round, toDisplayWeight } from '../../lib/units';
@@ -20,9 +21,41 @@ type Step = (typeof STEPS)[number];
 
 const thisYear = new Date().getFullYear();
 
+interface Typed {
+  text: string;
+  unit: WeightUnit;
+}
+
+const typedKg = (t: Typed): number | null => {
+  const n = parseDecimal(t.text);
+  return n === null ? null : fromDisplayWeight(n, t.unit);
+};
+
+/** The typed text in its own unit; otherwise the same weight converted to `unit`. */
+function shown(t: Typed, unit: WeightUnit): string {
+  if (t.unit === unit) return t.text;
+  const kg = typedKg(t);
+  return kg === null ? t.text : String(round(toDisplayWeight(kg, unit), 1));
+}
+
 export function Onboarding() {
   const [step, setStep] = useState<Step>('welcome');
   const [signIn, setSignIn] = useState(false);
+  const restoreRef = useRef<HTMLInputElement>(null);
+  const [restoreError, setRestoreError] = useState<string | null>(null);
+
+  // New phone: bring everything back (profile included) before setting anything up.
+  async function restoreFromFile(file: File) {
+    setRestoreError(null);
+    try {
+      const raw = JSON.parse(await file.text());
+      const hasProfile = Array.isArray(raw?.tables?.profile) && raw.tables.profile.some((p: { deletedAt?: number | null }) => !p.deletedAt);
+      await restoreBackup(raw);
+      if (!hasProfile) setRestoreError('Restored — but that backup has no profile, so tap Get started to set one up.');
+    } catch (err) {
+      setRestoreError(err instanceof SyntaxError ? 'That file is not valid JSON.' : err instanceof Error ? err.message : String(err));
+    }
+  }
   const [saving, setSaving] = useState(false);
 
   // About you
@@ -33,8 +66,14 @@ export function Onboarding() {
   const [weightUnit, setWeightUnit] = useState<WeightUnit>('kg');
   const [lengthUnit, setLengthUnit] = useState<LengthUnit>('cm');
   const [heightCm, setHeightCm] = useState<number | null>(null);
-  const [weight, setWeight] = useState('');
-  const [target, setTarget] = useState('');
+  // Weights remember the unit they were typed in, so flipping kg ⇄ lb only changes what's shown —
+  // re-converting a rounded number each time drifted (180 lb → 81.6 kg → 179.9 lb).
+  const [weightIn, setWeightIn] = useState<Typed>({ text: '', unit: 'kg' });
+  const [targetIn, setTargetIn] = useState<Typed>({ text: '', unit: 'kg' });
+  const weight = shown(weightIn, weightUnit);
+  const target = shown(targetIn, weightUnit);
+  const setWeight = (text: string) => setWeightIn({ text, unit: weightUnit });
+  const setTarget = (text: string) => setTargetIn({ text, unit: weightUnit });
   // Goal + activity
   const [goal, setGoal] = useState<Goal | null>(null);
   const [activity, setActivity] = useState<ActivityLevel | null>(null);
@@ -45,11 +84,9 @@ export function Onboarding() {
 
   const by = parseDecimal(birthYear);
   const birthYearValid = by !== null && by >= thisYear - 100 && by <= thisYear - 13;
-  const w = parseDecimal(weight);
-  const weightKg = w !== null ? fromDisplayWeight(w, weightUnit) : null;
+  const weightKg = typedKg(weightIn);
   const weightValid = weightKg !== null && weightKg >= 25 && weightKg <= 350;
-  const t = parseDecimal(target);
-  const targetKg = t !== null && target.trim() !== '' ? fromDisplayWeight(t, weightUnit) : null;
+  const targetKg = target.trim() !== '' ? typedKg(targetIn) : null;
   const targetValid = target.trim() === '' || (targetKg !== null && targetKg >= 25 && targetKg <= 350);
 
   const suggestion = useMemo(() => {
@@ -190,16 +227,7 @@ export function Onboarding() {
             <Segmented
               label="Weight unit"
               value={weightUnit}
-              onChange={(u) => {
-                // Convert what's typed so switching units doesn't change the actual weight.
-                const conv = (s: string) => {
-                  const n = parseDecimal(s);
-                  return n === null ? s : String(round(toDisplayWeight(fromDisplayWeight(n, weightUnit), u), 1));
-                };
-                setWeight(conv(weight));
-                setTarget(conv(target));
-                setWeightUnit(u);
-              }}
+              onChange={setWeightUnit}
               options={[
                 { value: 'kg', label: 'kg' },
                 { value: 'lb', label: 'lb' },
@@ -326,6 +354,25 @@ export function Onboarding() {
           <button className="btn btn-ghost btn-block" onClick={() => setSignIn(true)}>
             I already have an account
           </button>
+        )}
+        {step === 'welcome' && (
+          <>
+            <button className="btn btn-ghost btn-block" onClick={() => restoreRef.current?.click()}>
+              Restore from a backup file
+            </button>
+            <input
+              ref={restoreRef}
+              type="file"
+              accept="application/json,.json"
+              hidden
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                e.target.value = '';
+                if (f) void restoreFromFile(f);
+              }}
+            />
+            {restoreError && <p className="error-text">{restoreError}</p>}
+          </>
         )}
       </div>
 

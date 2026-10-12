@@ -4,7 +4,7 @@ import { NumberField } from '../../components/NumberField';
 import { useToast } from '../../components/Toast';
 import { create, update } from '../../db/repo';
 import type { Profile, WeightEntry } from '../../db/types';
-import { todayISO } from '../../lib/dates';
+import { todayISO, isLoggableDate } from '../../lib/dates';
 import { fromDisplayWeight, parseDecimal, round, toDisplayWeight } from '../../lib/units';
 
 /** Log (or edit) a weigh-in. Pre-fills with the last weight so usually it's a tiny tweak. */
@@ -27,7 +27,7 @@ export function LogWeightSheet({
 
   const n = parseDecimal(value);
   const kg = n !== null ? fromDisplayWeight(n, unit) : null;
-  const valid = kg !== null && kg >= 25 && kg <= 350 && date <= todayISO();
+  const valid = kg !== null && kg >= 25 && kg <= 350 && isLoggableDate(date);
 
   const nudge = (delta: number) => {
     const cur = parseDecimal(value) ?? 0;

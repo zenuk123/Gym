@@ -9,3 +9,4 @@ dev-dist
 *.tsbuildinfo
 /ios
 /android
+__pycache__/

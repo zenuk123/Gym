@@ -77,11 +77,24 @@ function keyBytes(b64url: string): Uint8Array<ArrayBuffer> {
 
 const pushFn = <T,>(body: Record<string, unknown>) => invokeFunction<T>('push', body);
 
+/**
+ * Ask for notification permission. Call this straight from a tap: iOS only shows the prompt
+ * while handling a user gesture (not from a timer or after an await).
+ */
+let permissionAsk: Promise<NotificationPermission> | null = null;
+export function askNotificationPermission(): void {
+  if (delivery() === 'push' && Notification.permission === 'default' && !permissionAsk) {
+    permissionAsk = Notification.requestPermission().finally(() => (permissionAsk = null));
+  }
+}
+
 async function subscribePush(): Promise<PushSubscription> {
   const reg = await navigator.serviceWorker.ready;
   const existing = await reg.pushManager.getSubscription();
   if (existing) return existing;
-  if ((await Notification.requestPermission()) !== 'granted') throw new Error('Notifications were not allowed. You can allow them in Settings → Notifications → Fitness OS.');
+  // Normally already asked from the tap (askNotificationPermission); wait for that answer.
+  const permission = permissionAsk ? await permissionAsk : Notification.permission === 'default' ? await Notification.requestPermission() : Notification.permission;
+  if (permission !== 'granted') throw new Error('Notifications were not allowed. You can allow them in Settings → Notifications → Fitness OS.');
   const { publicKey } = await pushFn<{ publicKey: string | null }>({ action: 'config' });
   if (!publicKey) throw new Error('The reminders server has no VAPID keys yet (see README §5).');
   return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(publicKey) });

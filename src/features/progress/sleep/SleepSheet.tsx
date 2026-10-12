@@ -4,7 +4,9 @@ import { useToast } from '../../../components/Toast';
 import { create, remove, update } from '../../../db/repo';
 import type { SleepLog } from '../../../db/types';
 import { formatDuration, sleepDuration } from '../../../lib/calc/sleep';
-import { todayISO } from '../../../lib/dates';
+import { isLoggableDate, todayISO } from '../../../lib/dates';
+
+const MAX_SLEEP_MIN = 16 * 60;
 
 export const QUALITY_LABEL = ['', 'Awful', 'Poor', 'OK', 'Good', 'Great'];
 
@@ -18,8 +20,11 @@ export function SleepSheet({ last, editing, onClose }: { last?: SleepLog | null;
   const [quality, setQuality] = useState(editing?.quality ?? 3);
   const [note, setNote] = useState(editing?.note ?? '');
 
-  const valid = /^\d{2}:\d{2}$/.test(bed) && /^\d{2}:\d{2}$/.test(wake) && date <= todayISO();
-  const minutes = valid ? sleepDuration(bed, wake) : 0;
+  const timesOk = /^\d{2}:\d{2}$/.test(bed) && /^\d{2}:\d{2}$/.test(wake);
+  const minutes = timesOk ? sleepDuration(bed, wake) : 0;
+  // Same bed and wake time reads as 24 h; anything over 16 h is almost certainly a typo.
+  const tooLong = minutes > MAX_SLEEP_MIN;
+  const valid = timesOk && !tooLong && isLoggableDate(date);
 
   async function save() {
     if (!valid) return;
@@ -51,7 +56,7 @@ export function SleepSheet({ last, editing, onClose }: { last?: SleepLog | null;
         </div>
       </div>
       <p className="sleep-total" aria-live="polite">
-        {valid ? formatDuration(minutes) : '—'} <span className="faint">in bed</span>
+        {timesOk ? formatDuration(minutes) : '—'} <span className="faint">in bed</span>
       </p>
       <div className="field">
         <span className="label">How did you sleep?</span>
@@ -75,6 +80,7 @@ export function SleepSheet({ last, editing, onClose }: { last?: SleepLog | null;
           <input id="sleep-note" value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. late coffee, woke at 3am" />
         </div>
       </div>
+      {tooLong && <p className="error-text">Check the times — that’s more than 16 hours in bed.</p>}
       <button className="btn btn-primary btn-lg btn-block" disabled={!valid} onClick={() => void save()}>
         Save
       </button>

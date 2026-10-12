@@ -12,6 +12,8 @@ import { ExercisePicker } from './ExercisePicker';
 import { MiniStepper } from './MiniStepper';
 import { MUSCLE_LABEL, planContext, useTraining } from './useTraining';
 import './workout.css';
+import { plural } from '../../lib/format';
+import { useCommitOnLeave } from '../../lib/useCommitOnLeave';
 
 const REST_OPTIONS = [30, 45, 60, 90, 120, 150, 180, 240, 300];
 const fmtRest = (s: number) => (s < 60 ? `${s}s` : s % 60 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` : `${s / 60} min`);
@@ -24,6 +26,9 @@ export function RoutineEditor({ profile }: { profile: Profile }) {
   const navigate = useNavigate();
   const toast = useToast();
   const [name, setName] = useState<string | null>(null);
+  const saveName = useCommitOnLeave((v: string) => {
+    if (routine && v.trim() && v.trim() !== routine.name) void saveRoutine(routine.id, { name: v.trim() });
+  });
   const [picking, setPicking] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -80,17 +85,17 @@ export function RoutineEditor({ profile }: { profile: Profile }) {
           <input
             id="routine-name"
             value={name ?? routine.name}
-            onChange={(e) => setName(e.target.value)}
-            onBlur={() => {
-              if (name !== null && name.trim() && name.trim() !== routine.name) void saveRoutine(routine.id, { name: name.trim() });
-              setName(null);
+            onChange={(e) => {
+              setName(e.target.value);
+              saveName(e.target.value);
             }}
+            onBlur={() => setName(null)}
             enterKeyHint="done"
           />
         </div>
       </div>
       <p className="faint" style={{ fontSize: 13, marginTop: -6 }}>
-        {exs.length} exercises · ~{estimateMinutes(routine)} min · changes save automatically
+        {plural(exs.length, 'exercise')} · ~{estimateMinutes(routine)} min · changes save automatically
       </p>
 
       {exs.map((e, i) => {

@@ -7,6 +7,7 @@ import { saveFile } from '../../lib/backup';
 import { buildCartFile } from '../../lib/calc/cartExport';
 import { UK_SHOPS } from '../../lib/calc/prices';
 import { todayISO } from '../../lib/dates';
+import { plural } from '../../lib/format';
 
 /** Shops the computer script knows by name (anything else works with --search-url). */
 const SCRIPT_SHOPS: Record<string, string> = {
@@ -64,7 +65,7 @@ export function CartExportSheet({
         </div>
       </div>
       <p className="faint" style={{ fontSize: 13 }}>
-        {file.items.length} items to buy
+        {plural(file.items.length, 'item')} to buy
         {file.items.some((i) => i.quantity > 1) ? ` · pack counts from your ${shop} prices` : ''}
         {key ? '' : ` · ${shop} isn’t built into the script, so give it the shop’s search address`}
       </p>
@@ -76,7 +77,7 @@ export function CartExportSheet({
           toast('List exported');
         }}
       >
-        <Icon name="download" /> Export list ({file.items.length} items)
+        <Icon name="download" /> Export list ({plural(file.items.length, 'item')})
       </button>
       <ol className="steps-plain">
         <li>Save the file somewhere your computer can reach (iCloud Drive, OneDrive, or email it to yourself).</li>

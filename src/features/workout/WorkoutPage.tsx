@@ -87,7 +87,7 @@ export function WorkoutPage({ profile }: { profile: Profile }) {
                     {r.name} {next?.id === r.id && !t.active && <span className="pill good">Next</span>}
                   </div>
                   <div className="desc">
-                    {r.exercises.length} exercises · ~{estimateMinutes(r)} min ·{' '}
+                    {plural(r.exercises.length, 'exercise')} · ~{estimateMinutes(r)} min ·{' '}
                     {r.exercises
                       .slice(0, 3)
                       .map((e) => t.exMap.get(e.exerciseId)?.name)
@@ -136,7 +136,7 @@ export function WorkoutPage({ profile }: { profile: Profile }) {
           </span>
           <div className="grow">
             <div className="title">Workout history</div>
-            <div className="desc">{t.finished.length} workouts logged</div>
+            <div className="desc">{plural(t.finished.length, 'workout')} logged</div>
           </div>
           <span className="trail">
             <Icon name="chevronRight" />
@@ -179,7 +179,7 @@ export function WorkoutPage({ profile }: { profile: Profile }) {
                 <div className="grow">
                   <div className="title">{r.name}</div>
                   <div className="desc">
-                    {r.exercises.length} exercises · ~{estimateMinutes(r)} min
+                    {plural(r.exercises.length, 'exercise')} · ~{estimateMinutes(r)} min
                   </div>
                 </div>
                 <span className="trail">
@@ -214,7 +214,7 @@ function NextUp({ t, routine, onStart, onOther }: { t: Training; routine: Routin
       <div>
         <div className="workout-title">{routine.name}</div>
         <p className="muted">
-          {routine.exercises.length} exercises · ~{estimateMinutes(routine)} min
+          {plural(routine.exercises.length, 'exercise')} · ~{estimateMinutes(routine)} min
         </p>
       </div>
       <ol className="mini-list">

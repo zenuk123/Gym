@@ -10,6 +10,10 @@ import { POSES } from './AddPhotoSheet';
 import { PhotoImg } from './PhotoImg';
 import { weightNear } from './PhotosPage';
 import '../progress.css';
+import { plural } from '../../../lib/format';
+
+/** "5 days" under two weeks, otherwise whole weeks. */
+const gap = (days: number) => (Math.abs(days) < 14 ? plural(Math.abs(days), 'day') : plural(Math.round(Math.abs(days) / 7), 'week'));
 
 /** Before/after: side by side, or one image over the other with a drag slider. */
 export function ComparePage({ profile }: { profile: Profile }) {
@@ -94,7 +98,7 @@ export function ComparePage({ profile }: { profile: Profile }) {
           <div className="stat-grid">
             <div className="stat">
               <div className="label">Time between</div>
-              <div className="value">{Math.round(daysBetween(a.date, b.date) / 7)} weeks</div>
+              <div className="value">{gap(daysBetween(a.date, b.date))}</div>
             </div>
             {wa !== null && wb !== null && (
               <div className="stat">

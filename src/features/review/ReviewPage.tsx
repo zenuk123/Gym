@@ -9,7 +9,7 @@ import { reviewText, type ReviewStatement } from '../../lib/calc/review';
 import { formatDuration } from '../../lib/calc/sleep';
 import { PB_LABEL } from '../../lib/calc/training';
 import { addDays, formatDateShort, startOfWeek } from '../../lib/dates';
-import { formatInt, formatLitres } from '../../lib/format';
+import { formatInt, formatLitres, plural } from '../../lib/format';
 import { formatWeight } from '../../lib/units';
 import { useToday } from '../../lib/useToday';
 import { useTraining } from '../workout/useTraining';
@@ -108,7 +108,7 @@ export function ReviewPage({ profile }: { profile: Profile }) {
             <small>/{r.training.target}</small>
           </div>
           <div className="stat-sub">
-            {r.training.sets} sets{volChange !== null && ` · vol ${volChange >= 0 ? '+' : '−'}${Math.abs(Math.round(volChange))}%`}
+            {plural(r.training.sets, 'set')}{volChange !== null && ` · vol ${volChange >= 0 ? '+' : '−'}${Math.abs(Math.round(volChange))}%`}
           </div>
         </div>
         <div className="stat">
@@ -122,22 +122,22 @@ export function ReviewPage({ profile }: { profile: Profile }) {
             {r.nutrition.avgProtein !== null ? formatInt(r.nutrition.avgProtein) : '—'}
             <small> g</small>
           </div>
-          <div className="stat-sub">hit on {r.nutrition.proteinHit} days</div>
+          <div className="stat-sub">hit on {plural(r.nutrition.proteinHit, 'day')}</div>
         </div>
         <div className="stat">
           <div className="label">Avg weight</div>
           <div className="value">{r.weight.avgKg !== null ? formatWeight(r.weight.avgKg, u) : '—'}</div>
-          <div className="stat-sub">{r.weight.changeKg !== null ? `${formatWeight(r.weight.changeKg, u, { signed: true })} vs last week` : `${r.weight.weighIns} weigh-ins`}</div>
+          <div className="stat-sub">{r.weight.changeKg !== null ? `${formatWeight(r.weight.changeKg, u, { signed: true })} vs last week` : plural(r.weight.weighIns, 'weigh-in')}</div>
         </div>
         <div className="stat">
           <div className="label">Water</div>
           <div className="value">{r.water.avgMl !== null ? formatLitres(r.water.avgMl) : '—'}</div>
-          <div className="stat-sub">target hit {r.water.daysHit} days</div>
+          <div className="stat-sub">target hit {plural(r.water.daysHit, 'day')}</div>
         </div>
         <div className="stat">
           <div className="label">Sleep</div>
           <div className="value">{r.sleep.avgMin !== null ? formatDuration(r.sleep.avgMin) : '—'}</div>
-          <div className="stat-sub">{r.sleep.nights} nights logged</div>
+          <div className="stat-sub">{plural(r.sleep.nights, 'night')} logged</div>
         </div>
       </div>
 

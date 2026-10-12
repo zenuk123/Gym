@@ -4,7 +4,7 @@ import { Segmented } from '../../../components/Segmented';
 import { Sheet } from '../../../components/Sheet';
 import { useToast } from '../../../components/Toast';
 import type { PhotoPose } from '../../../db/types';
-import { todayISO } from '../../../lib/dates';
+import { isLoggableDate, todayISO } from '../../../lib/dates';
 import { addPhoto } from './photoStore';
 
 export const POSES: { value: PhotoPose; label: string }[] = [
@@ -24,6 +24,7 @@ export function AddPhotoSheet({ initialPose = 'front', initialDate, onClose }: {
   const [error, setError] = useState<string | null>(null);
 
   async function onFile(file: File) {
+    if (!isLoggableDate(date)) return;
     setBusy(true);
     setError(null);
     try {
@@ -65,7 +66,7 @@ export function AddPhotoSheet({ initialPose = 'front', initialDate, onClose }: {
         }}
       />
       {error && <p className="error-text">{error}</p>}
-      <button className="btn btn-primary btn-lg btn-block" disabled={busy} onClick={() => input.current?.click()}>
+      <button className="btn btn-primary btn-lg btn-block" disabled={busy || !isLoggableDate(date)} onClick={() => input.current?.click()}>
         <Icon name="plus" />
         {busy ? 'Saving…' : `Take or choose ${pose} photo`}
       </button>

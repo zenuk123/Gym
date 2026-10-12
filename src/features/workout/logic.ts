@@ -139,6 +139,13 @@ export function patchSet(w: Workout, exId: string, setId: string, patch: Partial
   return w;
 }
 
+/** Patch computed from the set's *current* value — for steppers, so rapid taps each count. */
+export function updateSet(w: Workout, exId: string, setId: string, fn: (s: WorkoutSet) => Partial<WorkoutSet>): Workout {
+  const s = findEx(w, exId)?.sets.find((x) => x.id === setId);
+  if (s) Object.assign(s, fn(s));
+  return w;
+}
+
 export function completeSet(w: Workout, exId: string, setId: string, now = Date.now()): Workout {
   return patchSet(w, exId, setId, { done: true, completedAt: now });
 }

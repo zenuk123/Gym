@@ -9,7 +9,7 @@ import { useFoodLogsRange, useWaterLogsRange } from '../../db/hooks';
 import type { Profile } from '../../db/types';
 import { nutritionSummary } from '../../lib/calc/analytics';
 import { addDays, formatDateShort, parseISODate } from '../../lib/dates';
-import { formatInt, formatLitres } from '../../lib/format';
+import { formatInt, formatLitres, plural } from '../../lib/format';
 import { useToday } from '../../lib/useToday';
 import { ProgressTabs } from './ProgressTabs';
 import { RangeChips } from './RangeChips';
@@ -75,7 +75,7 @@ export function NutritionAnalytics({ profile }: { profile: Profile }) {
             </div>
             <div className="stat">
               <div className="label">Protein hit</div>
-              <div className="value">{s.proteinHit} days</div>
+              <div className="value">{plural(s.proteinHit, 'day')}</div>
               <div className="stat-sub">≥ 90% of target</div>
             </div>
             <div className="stat">

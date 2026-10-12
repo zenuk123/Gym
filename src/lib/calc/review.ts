@@ -3,9 +3,10 @@ import { addDays, startOfWeek } from '../dates';
 import type { InsightKind } from '../insights';
 import { formatWeight } from '../units';
 import { nutritionSummary, type NutritionSummary } from './analytics';
-import { summariseSleep, type SleepSummary } from './sleep';
+import { formatDuration, summariseSleep, type SleepSummary } from './sleep';
 import { mean } from './stats';
 import { workoutStats, type PersonalBest } from './training';
+import { plural } from '../format';
 
 // The weekly review (Mon–Sun): what happened, how it compares with last week, and what
 // to focus on next. Every statement is labelled fact / calculation / suggestion, and
@@ -108,7 +109,7 @@ export function weeklyReview(input: ReviewInput): WeeklyReview {
       wins.push({ kind: 'calculation', text: `Average weight moved ${formatWeight(Math.abs(weight.changeKg), u)} towards your goal.` });
   }
   if (sleepSummary.avgMin !== null && sleepSummary.nights >= 3 && sleepSummary.avgMin >= 7 * 60)
-    wins.push({ kind: 'calculation', text: `Averaged ${Math.floor(sleepSummary.avgMin / 60)}h ${Math.round(sleepSummary.avgMin % 60)}m in bed a night.` });
+    wins.push({ kind: 'calculation', text: `Averaged ${formatDuration(sleepSummary.avgMin)} in bed a night.` });
 
   // ── Focus for next week (suggestions, max 3, most important first) ─────
   const focus: ReviewStatement[] = [];
@@ -155,10 +156,10 @@ export function reviewText(r: WeeklyReview, profile: Profile): string {
   const u = profile.weightUnit;
   const lines = [
     `Week ${r.weekStart} → ${r.weekEnd}`,
-    `Workouts: ${r.training.workouts}/${r.training.target}, ${r.training.sets} working sets, ${r.training.pbs.length} PBs`,
-    `Food logged: ${r.nutrition.daysLogged} days; avg ${r.nutrition.avgKcal !== null ? Math.round(r.nutrition.avgKcal) : '—'} kcal (target ${profile.calorieTarget}), avg protein ${r.nutrition.avgProtein !== null ? Math.round(r.nutrition.avgProtein) : '—'} g (target ${profile.proteinTarget})`,
-    `Weight: avg ${r.weight.avgKg !== null ? formatWeight(r.weight.avgKg, u) : '—'}${r.weight.changeKg !== null ? ` (${formatWeight(r.weight.changeKg, u, { signed: true })} vs last week)` : ''}, ${r.weight.weighIns} weigh-ins`,
-    `Sleep: ${r.sleep.nights} nights logged${r.sleep.avgMin !== null ? `, avg ${Math.round(r.sleep.avgMin)} min` : ''}`,
+    `Workouts: ${r.training.workouts}/${r.training.target}, ${plural(r.training.sets, 'working set')}, ${plural(r.training.pbs.length, 'PB')}`,
+    `Food logged: ${plural(r.nutrition.daysLogged, 'day')}; avg ${r.nutrition.avgKcal !== null ? Math.round(r.nutrition.avgKcal) : '—'} kcal (target ${profile.calorieTarget}), avg protein ${r.nutrition.avgProtein !== null ? Math.round(r.nutrition.avgProtein) : '—'} g (target ${profile.proteinTarget})`,
+    `Weight: avg ${r.weight.avgKg !== null ? formatWeight(r.weight.avgKg, u) : '—'}${r.weight.changeKg !== null ? ` (${formatWeight(r.weight.changeKg, u, { signed: true })} vs last week)` : ''}, ${plural(r.weight.weighIns, 'weigh-in')}`,
+    `Sleep: ${plural(r.sleep.nights, 'night')} logged${r.sleep.avgMin !== null ? `, avg ${Math.round(r.sleep.avgMin)} min` : ''}`,
     `Habit score: ${r.score}/100`,
   ];
   return lines.join('\n');

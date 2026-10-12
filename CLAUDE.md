@@ -1,7 +1,7 @@
 # Fitness OS — notes for Claude
 
 Mobile-first fitness PWA (React 19 + TypeScript + Vite). Primary device: iPhone, installed from Safari.
-The owner has **no Mac** — never introduce Xcode, Swift or Mac-only tooling. Native iOS is a far-future phase.
+The owner has **no Mac** — never introduce Xcode, Swift or Mac-only tooling. The native app is built only in the cloud (README §5).
 
 ## Commands
 - `npm test` — Vitest (Node + fake-indexeddb). `npm run typecheck`. `npm run build`.
@@ -58,7 +58,7 @@ The owner has **no Mac** — never introduce Xcode, Swift or Mac-only tooling. N
 
 ## Integrations (Phase 7)
 - Apple Health: `lib/healthImport.ts` streams the Health `export.xml` (can be hundreds of MB — never read it whole)
-  and returns weigh-ins + nights; `features/more/HealthImportPage.tsx` imports only dates not already logged,
+  and returns weigh-ins + nights; `features/more/health/HealthImportPage.tsx` imports only dates not already logged,
   via `repo.createMany` (one transaction, still queued for sync).
 - Shared health shape: `lib/healthData.ts` (`fromNativeSamples`, `freshOnly`); every source imports through
   `features/more/health/importHealth.ts → importHealthData` (only unlogged days; deleted days count as logged).
@@ -116,3 +116,15 @@ The owner has **no Mac** — never introduce Xcode, Swift or Mac-only tooling. N
 - Colours come from tokens in `src/styles/tokens.css` (dark default + light). Use `--accent-text` for lime text/icons.
 - Numeric entry: `NumberField` (decimal keypad, accepts `,`). Modal input: `Sheet` (keyboard-aware).
 - Keep components small and feature code under `src/features/<area>/`. No UI library; avoid new dependencies.
+
+## Input pitfalls (each was a real bug — keep them fixed)
+- Never save only `onBlur`: iOS doesn't reliably blur a field when a button is tapped or you go back. Use
+  `lib/useCommitOnLeave.ts` (debounced save + flush on unmount), or commit pending text in the button handler.
+- Steppers / rapid taps on a live workout: `A.editSet(…, (s) => …)` computes from the stored value inside the
+  transaction — never `save({ x: set.x + 1 })` from render state.
+- A field that doesn't parse (empty, ".") means "no value" — don't keep the previous number alive behind it.
+  Cap obvious typos (10 kg / 100 servings per log; ≤ 950 kcal and ≤ 100 g macros per 100 g).
+- Dates from `<input type="date">` can be `""`: validate with `isLoggableDate` / `isISODate` (`'' <= today` is true).
+- "Selected day/week" state stores `null` for today/this week, so a page left open overnight rolls over.
+- Counts in text use `plural()` from `lib/format.ts`. Durations use `formatDuration` (rounds the total first).
+- Notification permission must be requested inside the tap handler (`askNotificationPermission`), not after a timer.

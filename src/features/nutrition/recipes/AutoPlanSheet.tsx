@@ -10,7 +10,7 @@ import { planSettings, prefsOf } from '../../../lib/calc/foodPrefs';
 import { ALLERGEN_LABEL } from '../../../lib/calc/ingredients';
 import { autoPlan, dayKcal, SLOT_SHARE, swapOptions, TAG_LABEL, type Proposal } from '../../../lib/calc/recipes';
 import { parseISODate } from '../../../lib/dates';
-import { formatInt } from '../../../lib/format';
+import { formatInt, plural } from '../../../lib/format';
 import { addPlanItem } from '../planActions';
 import { MEALS } from '../QuickAddSheet';
 import { RecipeImage } from './RecipeImage';
@@ -92,7 +92,7 @@ export function AutoPlanSheet({ profile, days, existing, onClose }: { profile: P
       const m = byId.get(p.mealId);
       if (m) await addPlanItem(planMeal(p.date, p.slot, m, p.servings));
     }
-    toast(`Planned ${proposals.length} meals — your shopping list can build from them`);
+    toast(`Planned ${plural(proposals.length, 'meal')} — your shopping list can build from them`);
     onClose();
   }
 
@@ -207,7 +207,7 @@ export function AutoPlanSheet({ profile, days, existing, onClose }: { profile: P
           <Icon name="refresh" /> Shuffle all
         </button>
         <button className="btn btn-primary" disabled={!proposals.length || saving} onClick={() => void save()}>
-          Add {proposals.length} meals
+          Add {plural(proposals.length, 'meal')}
         </button>
       </div>
     </Sheet>

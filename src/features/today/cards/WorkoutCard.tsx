@@ -106,7 +106,7 @@ export function WorkoutCard({ profile, t, today }: { profile: Profile; t: Traini
       <div>
         <div className="workout-title">{next.name}</div>
         <p className="muted">
-          {next.exercises.length} exercises · ~{estimateMinutes(next)} min
+          {plural(next.exercises.length, 'exercise')} · ~{estimateMinutes(next)} min
         </p>
       </div>
       {preview.map((p) => (

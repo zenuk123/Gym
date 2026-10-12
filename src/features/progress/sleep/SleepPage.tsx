@@ -14,6 +14,7 @@ import { ProgressTabs } from '../ProgressTabs';
 import { RangeChips } from '../RangeChips';
 import { QUALITY_LABEL, SleepSheet } from './SleepSheet';
 import '../progress.css';
+import { plural } from '../../../lib/format';
 
 const GUIDE_H = 8;
 const hours = (min: number) => min / 60;
@@ -140,8 +141,8 @@ export function SleepPage() {
               <div className="insight">
                 <span className="pill kind-calculation">Calculation</span>
                 <p>
-                  After 7 h or more you lifted at <b>{round(link.wellRested.performance * 100, 0)}%</b> of your recent typical strength ({link.wellRested.sessions} sessions),
-                  vs <b>{round(link.short.performance * 100, 0)}%</b> after shorter nights ({link.short.sessions} sessions) — a{' '}
+                  After 7 h or more you lifted at <b>{round(link.wellRested.performance * 100, 0)}%</b> of your recent typical strength ({plural(link.wellRested.sessions, 'session')}),
+                  vs <b>{round(link.short.performance * 100, 0)}%</b> after shorter nights ({plural(link.short.sessions, 'session')}) — a{' '}
                   {Math.abs(round(link.differencePct, 1))}% {link.differencePct >= 0 ? 'advantage for well-rested days' : 'difference in favour of short nights'}.
                 </p>
                 <p className="faint" style={{ fontSize: 13 }}>

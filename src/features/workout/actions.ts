@@ -31,6 +31,10 @@ export async function startWorkout(opts: {
 export const setField = (wid: string, exId: string, setId: string, patch: Partial<WorkoutSet>) =>
   edit(wid, (w) => L.patchSet(w, exId, setId, patch));
 
+/** Read-modify-write one set inside the transaction (never from possibly stale UI state). */
+export const editSet = (wid: string, exId: string, setId: string, fn: (s: WorkoutSet) => Partial<WorkoutSet>) =>
+  edit(wid, (w) => L.updateSet(w, exId, setId, fn));
+
 export const completeSet = (wid: string, exId: string, setId: string) => edit(wid, (w) => L.completeSet(w, exId, setId));
 
 export const undoSet = (wid: string, exId: string, setId: string) =>

@@ -14,6 +14,14 @@ export function parseISODate(s: ISODate): Date {
   return new Date(y, m - 1, d);
 }
 
+/** A real calendar date in `YYYY-MM-DD` form (iOS date pickers can be cleared to ""). */
+export function isISODate(s: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(s) && toISODate(parseISODate(s)) === s;
+}
+
+/** Valid date that isn't in the future — for anything you log. */
+export const isLoggableDate = (s: string, today: ISODate = todayISO()) => isISODate(s) && s <= today;
+
 export function addDays(s: ISODate, days: number): ISODate {
   const d = parseISODate(s);
   d.setDate(d.getDate() + days);

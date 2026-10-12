@@ -49,6 +49,10 @@ export function fromOff(p: OffProduct): OffFood | null {
   const protein = num(n['proteins_100g']);
   const name = (p.product_name_en || p.product_name || '').trim();
   if (kcal === null || protein === null || !name) return null;
+  const carbs = num(n['carbohydrates_100g']) ?? 0;
+  const fat = num(n['fat_100g']) ?? 0;
+  // Crowd-sourced data: skip entries that can't be right per 100 g (kJ typed as kcal, per-pack values…).
+  if (kcal < 0 || kcal > 950 || [protein, carbs, fat].some((x) => x < 0 || x > 100) || protein + carbs + fat > 105) return null;
   const serving = num(p.serving_quantity);
   return {
     name,
@@ -57,8 +61,8 @@ export function fromOff(p: OffProduct): OffFood | null {
     unit: 'g',
     kcal: Math.round(kcal),
     proteinG: protein,
-    carbsG: num(n['carbohydrates_100g']) ?? 0,
-    fatG: num(n['fat_100g']) ?? 0,
+    carbsG: carbs,
+    fatG: fat,
     fibreG: num(n['fiber_100g']),
     servingG: serving && serving > 0 ? serving : null,
     servingName: serving && serving > 0 ? (p.serving_size?.trim() || '1 serving') : null,

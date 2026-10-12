@@ -78,6 +78,19 @@ describe('planning a session', () => {
     expect((await db.workouts.get(w.id))!.exercises[0].sets.every((s) => s.done)).toBe(true);
   });
 
+  it('stepper taps each count, even before the previous save is visible', async () => {
+    const w = await A.startWorkout({ routine: null, exercises: exMap, history: new Map(), ctx });
+    await A.addExerciseToWorkout(w.id, bench, new Map(), ctx);
+    const ex = (await db.workouts.get(w.id))!.exercises[0];
+    const set = ex.sets[0];
+    // A typed weight saved, then three quick "+2.5" taps — none of them reads stale UI state.
+    void A.setField(w.id, ex.id, set.id, { weightKg: 60 });
+    await Promise.all([1, 2, 3].map(() => A.editSet(w.id, ex.id, set.id, (s) => ({ weightKg: s.weightKg + 2.5, reps: s.reps + 1 }))));
+    const after = (await db.workouts.get(w.id))!.exercises[0].sets[0];
+    expect(after.weightKg).toBe(67.5);
+    expect(after.reps).toBe(set.reps + 3);
+  });
+
   it('finishing drops unfinished sets and empty exercises', async () => {
     const w = await A.startWorkout({ routine: null, exercises: exMap, history: new Map(), ctx });
     await A.addExerciseToWorkout(w.id, bench, new Map(), ctx);

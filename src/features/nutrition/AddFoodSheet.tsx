@@ -7,7 +7,7 @@ import { useFoods, useRecentFoodLogs, useSavedMeals } from '../../db/hooks';
 import { create, remove } from '../../db/repo';
 import type { Food, ISODate, MealSlot, SavedMeal } from '../../db/types';
 import { describeAmount, foodUsage, mealPerServing, nutritionFor, recentFoods, scaleNutrients, searchFoods, type Nutrients } from '../../lib/calc/food';
-import { formatInt } from '../../lib/format';
+import { formatInt, plural } from '../../lib/format';
 import { searchOpenFoodFacts, type OffFood } from '../../lib/openFoodFacts';
 import { parseDecimal, round } from '../../lib/units';
 import { useOnline } from '../../pwa/platform';
@@ -271,7 +271,7 @@ function MealRow({ meal, onPick }: { meal: SavedMeal; onPick: () => void }) {
       <div className="grow">
         <div className="title">{meal.name}</div>
         <div className="desc">
-          Per serving · {n.kcal} kcal · {round(n.proteinG, 0)} g protein · {meal.items.length} items
+          Per serving · {n.kcal} kcal · {round(n.proteinG, 0)} g protein · {plural(meal.items.length, 'item')}
         </div>
       </div>
       <span className="trail">
@@ -315,7 +315,9 @@ function AmountStep({
   };
   const unitLabel = isFood ? (unitMode === 'serving' && hasServing ? `× ${food!.servingName ?? 'serving'} (${food!.servingG} ${food!.unit})` : food!.unit) : 'servings';
   const presets = isFood ? (unitMode === 'serving' && hasServing ? [0.5, 1, 1.5, 2, 3] : [50, 100, 150, 200, 250]) : [0.5, 1, 1.5, 2];
-  const valid = (isFood ? picked.grams : picked.servings) > 0;
+  const amount = isFood ? picked.grams : picked.servings;
+  // A typo like 99999 would log millions of kcal; nobody eats 10 kg or 100 servings at once.
+  const valid = amount > 0 && amount <= (isFood ? 10_000 : 100);
 
   return (
     <Sheet title={isFood ? picked.food.name : picked.meal.name} onClose={onBack}>
@@ -352,8 +354,8 @@ function AmountStep({
             onChange={(e) => {
               const v = e.target.value.replace(/[^0-9.,]/g, '');
               setText(v);
-              const num = parseDecimal(v);
-              if (num !== null) setAmount(num);
+              // Empty or "." means no amount yet — never keep the previous (now invisible) amount.
+              setAmount(parseDecimal(v) ?? 0);
               setText(v);
             }}
           />

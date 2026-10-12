@@ -18,7 +18,7 @@ import type { MealSlot, PlanItem, Profile, SavedMeal } from '../../db/types';
 import { mealPerServing } from '../../lib/calc/food';
 import { dayTotals, planFood, planMeal } from '../../lib/calc/plan';
 import { addDays, formatDateShort, parseISODate, startOfWeek } from '../../lib/dates';
-import { formatInt } from '../../lib/format';
+import { formatInt, plural } from '../../lib/format';
 import { round } from '../../lib/units';
 import { useToday } from '../../lib/useToday';
 import { MealIdeasSheet } from '../coach/MealIdeasSheet';
@@ -32,7 +32,10 @@ import './nutrition.css';
 export function PlanPage({ profile }: { profile: Profile }) {
   const today = useToday();
   const toast = useToast();
-  const [weekStart, setWeekStart] = useState(startOfWeek(today));
+  // null = this week (follows the calendar if the app stays open past Sunday night).
+  const [pickedWeek, setPickedWeek] = useState<string | null>(null);
+  const weekStart = pickedWeek ?? startOfWeek(today);
+  const setWeekStart = (w: string) => setPickedWeek(w === startOfWeek(today) ? null : w);
   const weekEnd = addDays(weekStart, 6);
   const items = usePlanItems(weekStart, weekEnd);
   const [adding, setAdding] = useState<{ date: string; slot: MealSlot } | null>(null);
@@ -420,11 +423,11 @@ function MealPrepSheet({ startDate, onClose }: { startDate: string; onClose: () 
             className="btn btn-primary btn-lg btn-block"
             onClick={async () => {
               await mealPrep(meal, start, portions, slot);
-              toast(`Planned ${portions} portions of ${meal.name}`);
+              toast(`Planned ${plural(portions, 'portion')} of ${meal.name}`);
               onClose();
             }}
           >
-            Plan {portions} portions
+            Plan {plural(portions, 'portion')}
           </button>
         </>
       )}
